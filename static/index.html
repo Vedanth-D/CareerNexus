@@ -1,0 +1,2522 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>CareerNexus - AI Resume Scorer & Multi-Agent Campaigns</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-fixed": "#ffdadb",
+                        "surface-bright": "#37393e",
+                        "on-tertiary-fixed-variant": "#92002a",
+                        "on-secondary": "#002e6a",
+                        "on-primary-fixed-variant": "#005236",
+                        "outline": "#86948a",
+                        "inverse-on-surface": "#2f3035",
+                        "primary-container": "#10b981",
+                        "secondary-fixed-dim": "#adc6ff",
+                        "primary": "#4edea3",
+                        "surface-container-highest": "#333539",
+                        "inverse-primary": "#006c49",
+                        "background": "#111317",
+                        "on-secondary-container": "#e6ecff",
+                        "surface-container-lowest": "#0c0e12",
+                        "on-tertiary-fixed": "#40000d",
+                        "outline-variant": "#3c4a42",
+                        "surface-tint": "#4edea3",
+                        "error": "#ffb4ab",
+                        "primary-fixed-dim": "#4edea3",
+                        "surface-dim": "#111317",
+                        "primary-fixed": "#6ffbbe",
+                        "on-secondary-fixed": "#001a42",
+                        "secondary-fixed": "#d8e2ff",
+                        "tertiary-container": "#ff7886",
+                        "on-secondary-fixed-variant": "#004395",
+                        "surface-variant": "#333539",
+                        "surface-container": "#1e2024",
+                        "secondary": "#adc6ff",
+                        "on-tertiary-container": "#780021",
+                        "tertiary-fixed-dim": "#ffb2b7",
+                        "surface-container-low": "#1a1c20",
+                        "inverse-surface": "#e2e2e8",
+                        "error-container": "#93000a",
+                        "on-error-container": "#ffdad6",
+                        "on-primary-container": "#00422b",
+                        "on-primary": "#003824",
+                        "on-background": "#e2e2e8",
+                        "on-surface": "#e2e2e8",
+                        "on-tertiary": "#67001b",
+                        "tertiary": "#ffb2b7",
+                        "on-primary-fixed": "#002113",
+                        "surface-container-high": "#282a2e",
+                        "surface": "#111317",
+                        "on-surface-variant": "#bbcabf",
+                        "secondary-container": "#0566d9",
+                        "on-error": "#690005"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "8px",
+                        "lg": "12px",
+                        "xl": "16px",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "stack-sm": "8px",
+                        "gutter": "16px",
+                        "container-padding": "24px",
+                        "section-gap": "48px",
+                        "unit": "4px",
+                        "stack-md": "16px"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Inter", "sans-serif"],
+                        "headline-md": ["Inter", "sans-serif"],
+                        "headline-lg": ["Inter", "sans-serif"],
+                        "label-technical": ["JetBrains Mono", "monospace"],
+                        "headline-lg-mobile": ["Inter", "sans-serif"],
+                        "body-lg": ["Inter", "sans-serif"],
+                        "data-mono": ["JetBrains Mono", "monospace"]
+                    },
+                    "fontSize": {
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "label-technical": ["14px", { "lineHeight": "20px", "letterSpacing": "0.02em", "fontWeight": "500" }],
+                        "headline-lg-mobile": ["26px", { "lineHeight": "32px", "fontWeight": "700" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "data-mono": ["12px", { "lineHeight": "16px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+    <style>
+        .glass-panel {
+            background-color: rgba(30, 41, 59, 0.4);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .glow-emerald {
+            box-shadow: 0 0 20px rgba(78, 222, 163, 0.12);
+        }
+        .glow-blue {
+            box-shadow: 0 0 20px rgba(173, 198, 255, 0.12);
+        }
+        .shimmer {
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
+            background-size: 200% 100%;
+            animation: shimmerEffect 1.5s infinite;
+        }
+        @keyframes shimmerEffect {
+            to { background-position: -200% 0; }
+        }
+    </style>
+</head>
+<body class="bg-[#111317] text-on-background font-body-md min-h-screen overflow-x-hidden selection:bg-primary-container/30 selection:text-primary">
+<div id="dashboardApp" class="hidden">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-background/60 backdrop-blur-xl border-b border-white/10 shadow-sm flex justify-between items-center h-16 px-gutter">
+    <div class="font-headline-md text-headline-md font-bold text-primary cursor-pointer active:scale-95 transition-transform flex items-center gap-2">
+        <span class="material-symbols-outlined text-primary text-3xl">psychology</span>
+        <span>CareerNexus</span>
+    </div>
+    <div class="flex items-center gap-gutter relative">
+        <span onclick="toggleNotificationsDropdown()" class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors cursor-pointer" data-icon="notifications">notifications</span>
+        
+        <!-- Notifications Dropdown Menu -->
+        <div id="notificationsDropdown" class="absolute right-10 top-8 w-64 glass-panel bg-surface-container/90 border border-white/10 rounded-lg shadow-2xl p-4 hidden z-50 text-left">
+            <h4 class="text-xs font-bold text-on-surface uppercase tracking-wider mb-2 font-label-technical flex justify-between items-center">
+                <span>Recent Activity</span>
+                <span class="w-1.5 h-1.5 rounded-full bg-primary glow-emerald"></span>
+            </h4>
+            <div id="notificationsList" class="space-y-2 text-[10px] text-on-surface-variant leading-tight">
+                <div class="border-b border-white/5 pb-2">
+                    <span class="text-primary font-semibold">● System</span> Online & database initialized.
+                </div>
+                <div class="border-b border-white/5 pb-2">
+                    <span class="text-primary font-semibold">● Session</span> Credentials validated successfully.
+                </div>
+            </div>
+        </div>
+
+        <span onclick="switchTab('settings-tab')" class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors cursor-pointer" data-icon="account_circle">account_circle</span>
+    </div>
+</header>
+
+<!-- SideNavBar -->
+<nav class="fixed left-0 top-0 h-full w-64 z-40 bg-surface-container/60 backdrop-blur-xl border-r border-white/10 shadow-xl flex flex-col py-container-padding pt-20 transition-transform md:translate-x-0 -translate-x-full">
+    <!-- Global Resume Status / Upload -->
+    <div class="px-gutter mb-6">
+        <div class="bg-surface-container-low border border-white/10 rounded-lg p-4 flex flex-col gap-2 relative">
+            <div class="text-xs text-on-surface-variant font-label-technical flex justify-between items-center">
+                <span>Resume Status</span>
+                <span class="w-2 h-2 rounded-full bg-red-500" id="resumeDot"></span>
+            </div>
+            
+            <div id="resumeUploadSection">
+                <label for="sideResumeFile" class="flex flex-col items-center justify-center border border-dashed border-white/20 rounded-md py-4 cursor-pointer hover:border-primary/50 transition-colors">
+                    <span class="material-symbols-outlined text-on-surface-variant text-2xl">upload_file</span>
+                    <span class="text-[10px] text-on-surface mt-1 text-center font-medium">Upload PDF/DOCX</span>
+                    <input type="file" id="sideResumeFile" class="hidden" accept=".pdf,.docx,.txt,.md" onchange="uploadGlobalResume(this.files[0])"/>
+                </label>
+            </div>
+
+            <div id="resumeInfoSection" class="hidden flex items-center justify-between bg-surface-variant/40 rounded p-2 text-xs border border-white/5">
+                <div class="flex items-center gap-2 overflow-hidden mr-2">
+                    <span class="material-symbols-outlined text-primary text-sm flex-shrink-0">description</span>
+                    <span id="globalResumeName" class="text-on-surface truncate">resume.pdf</span>
+                </div>
+                <button onclick="clearGlobalResume()" class="text-error hover:bg-error-container/20 rounded-full p-1 leading-none text-xs">✕</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation List -->
+    <ul class="flex flex-col gap-unit flex-grow" id="navLinksList">
+        <li>
+            <button onclick="switchTab('ats-tab')" id="ats-tab-btn" class="w-full flex items-center gap-4 px-container-padding py-3 bg-primary-container/20 text-primary border-r-4 border-primary transition-all duration-200 ease-in-out">
+                <span class="material-symbols-outlined">analytics</span>
+                <span class="font-body-md text-body-md font-semibold">ATS Scorer</span>
+            </button>
+        </li>
+        <li>
+            <button onclick="switchTab('chat-tab')" id="chat-tab-btn" class="w-full flex items-center gap-4 px-container-padding py-3 text-on-surface-variant hover:bg-surface-variant/30 hover:text-on-surface transition-all duration-200 ease-in-out">
+                <span class="material-symbols-outlined">psychology</span>
+                <span class="font-body-md text-body-md">Career AI Coach</span>
+            </button>
+        </li>
+        <li>
+            <button onclick="switchTab('intel-tab')" id="intel-tab-btn" class="w-full flex items-center gap-4 px-container-padding py-3 text-on-surface-variant hover:bg-surface-variant/30 hover:text-on-surface transition-all duration-200 ease-in-out">
+                <span class="material-symbols-outlined">domain</span>
+                <span class="font-body-md text-body-md">Company Intel</span>
+            </button>
+        </li>
+        <li>
+            <button onclick="switchTab('campaigns-tab')" id="campaigns-tab-btn" class="w-full flex items-center gap-4 px-container-padding py-3 text-on-surface-variant hover:bg-surface-variant/30 hover:text-on-surface transition-all duration-200 ease-in-out">
+                <span class="material-symbols-outlined">rocket_launch</span>
+                <span class="font-body-md text-body-md">Campaigns</span>
+            </button>
+        </li>
+    </ul>
+
+    <div class="mt-auto px-container-padding">
+        <div class="h-px bg-white/10 my-4 w-full"></div>
+        <ul class="flex flex-col gap-unit">
+            <li>
+                <button onclick="switchTab('settings-tab')" id="settings-tab-btn" class="w-full flex items-center gap-4 py-2 text-on-surface-variant hover:text-on-surface transition-colors bg-transparent border-0 text-left cursor-pointer outline-none">
+                    <span class="material-symbols-outlined text-[20px]">settings</span>
+                    <span class="font-label-technical text-label-technical">Settings</span>
+                </button>
+            </li>
+            <li>
+                <button onclick="switchTab('support-tab')" id="support-tab-btn" class="w-full flex items-center gap-4 py-2 text-on-surface-variant hover:text-on-surface transition-colors bg-transparent border-0 text-left cursor-pointer outline-none">
+                    <span class="material-symbols-outlined text-[20px]">help</span>
+                    <span class="font-label-technical text-label-technical">Support</span>
+                </button>
+            </li>
+        </ul>
+    </div>
+</nav>
+
+<!-- Main Content -->
+<main class="md:ml-64 pt-20 px-4 md:px-container-padding pb-20 min-h-screen">
+    <div class="max-w-7xl mx-auto space-y-gutter">
+
+        <!-- Pipeline Monitor Progress (Unified Status) -->
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4" id="agentPipelineIndicator">
+            <div class="bg-surface-container-low border border-white/5 rounded-lg p-3 flex flex-col gap-1" id="prog-scraper">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-on-surface font-label-technical">Search Agent</span>
+                    <span class="w-2 h-2 rounded-full bg-surface-variant" id="dot-scraper"></span>
+                </div>
+                <p class="text-[10px] text-on-surface-variant" id="msg-scraper">Waiting...</p>
+            </div>
+            <div class="bg-surface-container-low border border-white/5 rounded-lg p-3 flex flex-col gap-1" id="prog-planner">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-on-surface font-label-technical">ATS Agent</span>
+                    <span class="w-2 h-2 rounded-full bg-surface-variant" id="dot-planner"></span>
+                </div>
+                <p class="text-[10px] text-on-surface-variant" id="msg-planner">Waiting...</p>
+            </div>
+            <div class="bg-surface-container-low border border-white/5 rounded-lg p-3 flex flex-col gap-1" id="prog-critic">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-on-surface font-label-technical">Critic Agent</span>
+                    <span class="w-2 h-2 rounded-full bg-surface-variant" id="dot-critic"></span>
+                </div>
+                <p class="text-[10px] text-on-surface-variant" id="msg-critic">Waiting...</p>
+            </div>
+            <div class="bg-surface-container-low border border-white/5 rounded-lg p-3 flex flex-col gap-1" id="prog-writer">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-on-surface font-label-technical">Resume Agent</span>
+                    <span class="w-2 h-2 rounded-full bg-surface-variant" id="dot-writer"></span>
+                </div>
+                <p class="text-[10px] text-on-surface-variant" id="msg-writer">Waiting...</p>
+            </div>
+            <div class="bg-surface-container-low border border-white/5 rounded-lg p-3 flex flex-col gap-1" id="prog-tracker">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-on-surface font-label-technical">Email Agent</span>
+                    <span class="w-2 h-2 rounded-full bg-surface-variant" id="dot-tracker"></span>
+                </div>
+                <p class="text-[10px] text-on-surface-variant" id="msg-tracker">Waiting...</p>
+            </div>
+        </div>
+
+
+        <!-- ==================== TAB 1: ATS SCORER ==================== -->
+        <section id="ats-tab" class="space-y-stack-md">
+            <div>
+                <h1 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface">ATS Compatibility Scorer</h1>
+                <p class="font-body-md text-on-surface-variant mt-1">Audit your resume against a target job description and get optimized suggestions.</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <!-- Inputs Side -->
+                <div class="lg:col-span-5 flex flex-col gap-4">
+                    <div class="glass-panel rounded-lg p-5 flex flex-col gap-4">
+                        <div class="flex items-center justify-between">
+                            <h2 class="text-sm font-bold uppercase tracking-wider text-on-surface-variant font-label-technical">Job Description</h2>
+                        </div>
+                        <textarea id="atsJdText" class="w-full h-80 bg-surface-container-high border border-white/10 rounded px-4 py-3 text-xs text-on-surface focus:border-primary focus:ring-0 outline-none resize-none placeholder:text-on-surface-variant/40" placeholder="Paste the job description here..."></textarea>
+                        
+                        <button onclick="runAtsScorer()" id="atsScorerBtn" class="w-full bg-primary hover:bg-primary-fixed text-on-primary font-bold py-3 rounded transition-all flex items-center justify-center gap-2">
+                            <span class="material-symbols-outlined text-lg">settings_suggest</span> Run ATS Analysis
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Outputs Side (Initial Empty State) -->
+                <div class="lg:col-span-7 flex flex-col gap-4" id="atsEmptyState">
+                    <div class="glass-panel rounded-lg p-10 flex flex-col items-center justify-center text-center h-full">
+                        <span class="material-symbols-outlined text-5xl text-outline mb-4">analytics</span>
+                        <div class="text-base font-semibold text-on-surface mb-2">No Analysis Run Yet</div>
+                        <p class="text-xs text-on-surface-variant max-w-sm">Please upload your resume in the sidebar, paste a job description, and click "Run ATS Analysis" to evaluate compatibility.</p>
+                    </div>
+                </div>
+
+                <!-- Outputs Side (Data state - hidden initially) -->
+                <div class="lg:col-span-7 flex flex-col gap-6 hidden" id="atsDataState">
+                    
+                    <!-- Score and Sections Gauge -->
+                    <div class="glass-panel rounded-lg p-6 flex flex-col md:flex-row items-center gap-8 justify-around glow-emerald">
+                        <!-- Radial Circular Gauge -->
+                        <div class="relative w-36 h-36 flex items-center justify-center">
+                            <svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                                <circle cx="50" cy="50" r="40" stroke="rgba(255,255,255,0.05)" stroke-width="8" fill="transparent" />
+                                <circle id="atsCircleGauge" cx="50" cy="50" r="40" stroke="#4edea3" stroke-width="8" fill="transparent"
+                                        stroke-dasharray="251.2" stroke-dashoffset="251.2" class="transition-all duration-1000 ease-out" />
+                            </svg>
+                            <div class="absolute text-center">
+                                <div class="text-3xl font-bold text-on-surface font-headline-md" id="atsScoreValue">0%</div>
+                                <div class="text-[9px] uppercase tracking-wider text-on-surface-variant font-label-technical">Match Score</div>
+                            </div>
+                        </div>
+
+                        <!-- Section Scores list -->
+                        <div class="flex-grow space-y-3 w-full md:w-auto">
+                            <div>
+                                <div class="flex justify-between text-xs font-label-technical mb-1">
+                                    <span class="text-on-surface-variant">Work Experience</span>
+                                    <span class="text-on-surface" id="score-exp">0%</span>
+                                </div>
+                                <div class="w-full bg-white/5 h-2 rounded overflow-hidden">
+                                    <div class="bg-primary h-full transition-all duration-1000" id="bar-exp" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs font-label-technical mb-1">
+                                    <span class="text-on-surface-variant">Technical Skills</span>
+                                    <span class="text-on-surface" id="score-skills">0%</span>
+                                </div>
+                                <div class="w-full bg-white/5 h-2 rounded overflow-hidden">
+                                    <div class="bg-primary h-full transition-all duration-1000" id="bar-skills" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs font-label-technical mb-1">
+                                    <span class="text-on-surface-variant">Formatting & Flow</span>
+                                    <span class="text-on-surface" id="score-format">0%</span>
+                                </div>
+                                <div class="w-full bg-white/5 h-2 rounded overflow-hidden">
+                                    <div class="bg-primary h-full transition-all duration-1000" id="bar-format" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ATS Audit Checklist -->
+                    <div class="bg-surface-container rounded-lg p-5 border border-white/5 flex flex-col gap-4">
+                        <div class="text-xs font-label-technical text-on-surface-variant uppercase tracking-wider flex items-center gap-2">
+                            <span class="material-symbols-outlined text-[18px] text-primary">fact_check</span>
+                            ATS System Audit Checklist
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-body-md" id="atsChecklistContainer">
+                            <!-- Javascript checklist rows -->
+                        </div>
+                    </div>
+
+                    <!-- Keyword Matcher chips -->
+                    <div class="bg-surface-container rounded-lg p-5 border border-white/5">
+                        <div class="text-xs font-label-technical text-on-surface-variant uppercase tracking-wider mb-3">Keyword Recommender</div>
+                        
+                        <div class="mb-4">
+                            <div class="text-[10px] text-primary font-bold uppercase tracking-wider mb-2 flex items-center gap-1">
+                                <span class="w-1.5 h-1.5 rounded-full bg-primary"></span> Matched Keywords
+                            </div>
+                            <div class="flex flex-wrap gap-2" id="atsMatchedKeywords">
+                                <!-- Javascript dynamic content -->
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="text-[10px] text-error font-bold uppercase tracking-wider mb-2 flex items-center gap-1">
+                                <span class="w-1.5 h-1.5 rounded-full bg-error"></span> Missing Keywords (Add These!)
+                            </div>
+                            <div class="flex flex-wrap gap-2" id="atsMissingKeywords">
+                                <!-- Javascript dynamic content -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recommendations List -->
+                    <div class="bg-surface-container rounded-lg p-5 border border-white/5">
+                        <div class="text-xs font-label-technical text-on-surface-variant uppercase tracking-wider mb-3 flex items-center gap-2">
+                            <span class="material-symbols-outlined text-[18px] text-secondary">assignment</span>
+                            ATS Improvement suggestions
+                        </div>
+                        <ul class="space-y-3" id="atsSuggestionsList">
+                            <!-- Javascript dynamic content -->
+                        </ul>
+                    </div>
+
+                    <!-- Tailored Resume -->
+                    <div class="bg-surface-container rounded-lg p-5 border border-white/5">
+                        <div class="flex justify-between items-center mb-3">
+                            <div class="text-xs font-label-technical text-on-surface-variant uppercase tracking-wider">ATS Optimized Resume Preview</div>
+                            <button onclick="copyToClipboard('atsTailoredResumeText', this)" class="bg-surface-variant hover:bg-white/10 text-on-surface font-label-technical text-[10px] py-1 px-3 rounded flex items-center gap-1">
+                                <span class="material-symbols-outlined text-sm">content_copy</span> Copy
+                            </button>
+                        </div>
+                        <pre id="atsTailoredResumeText" class="w-full bg-surface-container-low border border-white/5 p-4 rounded text-xs text-on-surface overflow-x-auto max-h-80 overflow-y-auto whitespace-pre-wrap font-mono"></pre>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ==================== TAB 2: CAREER AI COACH ==================== -->
+        <section id="chat-tab" class="space-y-stack-md hidden">
+            <div>
+                <h1 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface">Career AI Assistant</h1>
+                <p class="font-body-md text-on-surface-variant mt-1">Converse with an AI recruiter trained on your profile to solve resume problems or prep for interview rounds.</p>
+            </div>
+
+            <div class="glass-panel rounded-xl overflow-hidden flex flex-col h-[600px] border border-primary/20 glow-emerald">
+                <!-- Chat header -->
+                <div class="bg-primary/10 p-4 border-b border-primary/20 flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <span class="material-symbols-outlined text-primary text-2xl">psychology</span>
+                        <div>
+                            <span class="font-headline-md text-sm font-bold text-on-surface block">Elite Career Coach</span>
+                            <span class="text-[10px] text-primary font-label-technical">Fully aware of your resume & selected JD</span>
+                        </div>
+                    </div>
+                    <button onclick="clearChatHistory()" class="bg-transparent border border-white/10 hover:bg-white/5 text-on-surface text-[10px] px-3 py-1.5 rounded transition-colors font-label-technical">Reset Conversation</button>
+                </div>
+
+                <!-- Chat Messages Body -->
+                <div id="fullChatMessages" class="flex-grow p-6 overflow-y-auto space-y-4 bg-surface-container-lowest/20">
+                    <div class="flex items-start gap-3">
+                        <div class="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary text-sm flex-shrink-0">🤖</div>
+                        <div class="bg-surface-variant/40 border border-white/5 rounded-lg p-4 text-xs text-on-surface leading-relaxed max-w-[85%]">
+                            Hello! I am your interactive Career Coach. I can help you:
+                            <ul class="list-disc pl-4 mt-2 space-y-1">
+                               <li>Highlight missing keywords in your experiences.</li>
+                               <li>Simulate a mock technical or systems design interview.</li>
+                               <li>Draft specialized elevator pitches for hiring managers.</li>
+                            </ul>
+                            What would you like to build or discuss today?
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chat Input controls -->
+                <div class="p-4 bg-surface-container border-t border-white/5">
+                    <div class="flex gap-2 flex-wrap mb-3">
+                        <button onclick="sendQuickPrompt('Draft an elevator pitch for this resume')" class="py-1 px-3 bg-surface-variant/50 hover:bg-surface-variant text-on-surface text-[10px] rounded transition-colors">🎯 Pitch Tactic</button>
+                        <button onclick="sendQuickPrompt('Give me 3 tough interview questions based on the JD')" class="py-1 px-3 bg-surface-variant/50 hover:bg-surface-variant text-on-surface text-[10px] rounded transition-colors">❓ Practice Qs</button>
+                        <button onclick="sendQuickPrompt('What missing keywords should I add to my resume summary?')" class="py-1 px-3 bg-surface-variant/50 hover:bg-surface-variant text-on-surface text-[10px] rounded transition-colors">🔍 Keywords advice</button>
+                    </div>
+                    <div class="flex gap-2">
+                        <input id="fullChatInput" onkeydown="if(event.key==='Enter') sendChatMessage()" class="flex-grow bg-surface-container-highest border border-white/10 rounded px-4 py-2.5 text-xs text-on-surface focus:border-primary outline-none" placeholder="Ask anything about your resume, interview strategy, or career goals..." type="text"/>
+                        <button onclick="sendChatMessage()" class="bg-primary hover:bg-primary-fixed text-on-primary px-5 py-2.5 rounded font-bold text-xs transition-colors flex items-center justify-center">
+                            <span class="material-symbols-outlined text-sm">send</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ==================== TAB 3: COMPANY INTELLIGENCE ==================== -->
+        <section id="intel-tab" class="space-y-stack-md hidden">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-6 gap-4">
+                <div>
+                    <h1 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface">Company Intelligence</h1>
+                    <p class="font-body-md text-on-surface-variant mt-1">Deep-dive research into company financials, scale, tech stacks, and interview strategies.</p>
+                </div>
+                <div class="relative w-full md:w-96 flex gap-2">
+                    <div class="relative flex-grow">
+                        <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-base">search</span>
+                        <input id="companySearchInput" class="w-full bg-surface-container-high border border-white/10 focus:border-primary focus:ring-0 pl-10 pr-4 py-2 text-on-surface text-sm rounded transition-colors outline-none placeholder:text-on-surface-variant/40" placeholder="e.g. Stripe, Vercel, Google..." type="text" value="Stripe"/>
+                    </div>
+                    <button onclick="searchCompanyIntelligence()" id="companySearchBtn" class="bg-primary hover:bg-primary-fixed text-on-primary font-bold px-4 py-2 rounded text-xs transition-colors">Search</button>
+                </div>
+            </div>
+
+            <!-- Loader State -->
+            <div class="glass-panel rounded-xl p-16 flex flex-col items-center justify-center text-center hidden" id="companyLoader">
+                <div class="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4"></div>
+                <div class="text-sm font-semibold text-on-surface">Assembling Intelligence Dossier...</div>
+                <p class="text-xs text-on-surface-variant mt-2 max-w-xs">Connecting to Wikipedia, scraping public directories, and parsing tech stacks.</p>
+            </div>
+
+            <!-- Dashboard Bento Grid Card -->
+            <div class="glass-panel rounded-xl p-6 glow-emerald" id="companyContentArea">
+                <div class="flex items-center justify-between mb-6 border-b border-white/5 pb-4">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 bg-white rounded-lg flex items-center justify-center p-2 font-headline-md font-bold text-background" id="companyLogoInitial">
+                            S
+                        </div>
+                        <div>
+                            <h2 class="font-headline-md text-headline-md text-on-surface" id="comp-name">Stripe</h2>
+                            <p class="font-label-technical text-label-technical text-primary font-bold" id="comp-tagline">Fintech • Payment Processing</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="font-label-technical text-label-technical text-on-surface-variant">Match Score</div>
+                        <div class="font-headline-lg text-headline-lg text-primary" id="comp-score">92%</div>
+                    </div>
+                </div>
+
+                <!-- Bento Grid Content -->
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+                    
+                    <!-- Left Side Column Details (Col 8) -->
+                    <div class="md:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+                        
+                        <!-- Size & Revenue -->
+                        <div class="bg-surface-container rounded-lg p-4 border border-white/5">
+                            <div class="flex items-center gap-2 text-on-surface-variant mb-2">
+                                <span class="material-symbols-outlined text-[18px]">trending_up</span>
+                                <span class="font-label-technical text-label-technical">Size &amp; Scale</span>
+                            </div>
+                            <div class="font-body-md text-on-surface mb-1 font-semibold" id="comp-size">~8,000 Employees</div>
+                            <div class="font-data-mono text-data-mono text-secondary" id="comp-revenue">Est. Revenue: $14B (2022)</div>
+                            <div class="font-data-mono text-data-mono text-on-surface-variant mt-2 text-xs" id="comp-stage">Stage: Late Stage Private / Pre-IPO</div>
+                        </div>
+
+                        <!-- Mission -->
+                        <div class="bg-surface-container rounded-lg p-4 border border-white/5">
+                            <div class="flex items-center gap-2 text-on-surface-variant mb-2">
+                                <span class="material-symbols-outlined text-[18px]">lightbulb</span>
+                                <span class="font-label-technical text-label-technical">Core Mission</span>
+                            </div>
+                            <p class="font-body-md text-on-surface text-sm italic" id="comp-mission">"Increase the GDP of the internet."</p>
+                            <div class="mt-3 flex flex-wrap gap-2" id="comp-tags">
+                                <span class="px-2 py-1 bg-surface-variant rounded text-on-surface font-label-technical text-[10px]">Developer-First</span>
+                                <span class="px-2 py-1 bg-surface-variant rounded text-on-surface font-label-technical text-[10px]">Writing Culture</span>
+                            </div>
+                        </div>
+
+                        <!-- Tech Stack -->
+                        <div class="md:col-span-2 bg-surface-container rounded-lg p-4 border border-white/5">
+                            <div class="flex items-center gap-2 text-on-surface-variant mb-3">
+                                <span class="material-symbols-outlined text-[18px]">terminal</span>
+                                <span class="font-label-technical text-label-technical">Known Tech Stack</span>
+                            </div>
+                            <div class="flex flex-wrap gap-2" id="comp-techstack">
+                                <!-- Dynamic tags -->
+                            </div>
+                        </div>
+
+                        <!-- Branches map and locations -->
+                        <div class="md:col-span-2 bg-surface-container rounded-lg p-4 border border-white/5 flex flex-col justify-between">
+                            <div class="flex items-center gap-2 text-on-surface-variant mb-3">
+                                <span class="material-symbols-outlined text-[18px]">map</span>
+                                <span class="font-label-technical text-label-technical">Offices & Locations</span>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <span class="material-symbols-outlined text-2xl text-secondary">location_on</span>
+                                <div>
+                                    <div class="font-label-technical text-label-technical text-on-surface">Headquarters</div>
+                                    <div class="font-data-mono text-data-mono text-on-surface-variant text-xs" id="comp-hq">San Francisco, CA &amp; Dublin, IRE</div>
+                                </div>
+                            </div>
+                            <div class="mt-3 text-xs border-t border-white/5 pt-2" id="comp-branches">
+                                <span class="text-on-surface-variant font-label-technical">Branches:</span> Seattle, New York, London, Tokyo
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Side Column Actionable Intel (Col 4) -->
+                    <div class="md:col-span-4 flex flex-col gap-6">
+                        <!-- Cheat Sheet -->
+                        <div class="bg-surface-container rounded-lg p-4 border border-white/5 flex-grow">
+                            <div class="flex items-center gap-2 text-secondary mb-3">
+                                <span class="material-symbols-outlined text-[18px]">assignment</span>
+                                <span class="font-label-technical text-label-technical font-bold">Interview Cheat Sheet</span>
+                            </div>
+                            <ul class="space-y-4" id="comp-cheatsheet">
+                                <!-- Dynamic interview points -->
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Culture Panel (Col 6) -->
+                    <div class="md:col-span-6 bg-surface-container rounded-lg p-4 border border-white/5">
+                        <div class="flex items-center gap-2 text-primary mb-3">
+                            <span class="material-symbols-outlined text-[18px]">diversity_3</span>
+                            <span class="font-label-technical text-label-technical">Culture &amp; Vibe</span>
+                        </div>
+                        <div class="bg-surface-variant/20 rounded p-4 border border-white/5">
+                            <p class="text-xs text-on-surface italic" id="comp-vibe">"Collaborative, high-velocity, and engineering-led."</p>
+                        </div>
+                    </div>
+
+                    <!-- Landscape & Funding (Col 6) -->
+                    <div class="md:col-span-6 bg-surface-container rounded-lg p-4 border border-white/5">
+                        <div class="flex items-center gap-2 text-secondary mb-3">
+                            <span class="material-symbols-outlined text-[18px]">monitoring</span>
+                            <span class="font-label-technical text-label-technical">Market Landscape</span>
+                        </div>
+                        <div class="space-y-3">
+                            <div>
+                                <div class="text-[10px] uppercase text-on-surface-variant mb-1 font-label-technical">Key Competitors</div>
+                                <div class="flex gap-2 flex-wrap" id="comp-competitors">
+                                    <!-- competitor tags -->
+                                </div>
+                            </div>
+                            <div>
+                                <div class="text-[10px] uppercase text-on-surface-variant mb-1 font-label-technical">Funding / Financial status</div>
+                                <p class="text-xs text-on-surface" id="comp-funding">Raised $6.5B at $50B valuation (March 2023) to provide liquidity to employees.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pitch Tactic -->
+                <div class="mt-6 bg-surface-container-low rounded-lg p-4 border-l-4 border-primary">
+                    <div class="font-label-technical text-label-technical text-primary mb-2 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[16px]">record_voice_over</span>
+                        AI Generated Pitch Tactic
+                    </div>
+                    <p class="font-body-md text-on-surface text-sm" id="comp-pitch">
+                        "With my background in distributed systems and Go, I'm highly aligned with Stripe's focus on robust developer tooling..."
+                    </p>
+                    <div class="mt-3 flex gap-3">
+                        <button onclick="copyToClipboard('comp-pitch', this)" class="bg-primary hover:bg-primary-fixed text-on-primary font-label-technical text-[10px] py-1.5 px-4 rounded transition-colors flex items-center gap-2 font-bold">
+                            <span class="material-symbols-outlined text-[16px]">content_copy</span> Copy
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ==================== TAB 4: CAMPAIGNS ==================== -->
+        <section id="campaigns-tab" class="space-y-stack-md hidden">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-6 gap-4">
+                <div>
+                    <h2 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface">Job Finder & Application Campaigns</h2>
+                    <p class="font-body-md text-on-surface-variant mt-1">Deploy Multi-Agent search queries, match listings, and track generated outreach documents.</p>
+                </div>
+                
+                <!-- Campaign launcher query block -->
+                <div class="flex gap-2 w-full md:w-auto">
+                    <input id="campaignQueryInput" class="bg-surface-container-high border border-white/10 px-4 py-2 text-sm text-on-surface rounded outline-none placeholder:text-on-surface-variant/50 w-full md:w-64" placeholder="e.g. python developer remote" value="python developer remote"/>
+                    <button onclick="runCampaignAgent()" id="runCampaignBtn" class="bg-primary hover:bg-primary-fixed text-on-primary font-bold px-5 py-2.5 rounded text-xs transition-colors flex-shrink-0">
+                        Launch Campaign
+                    </button>
+                </div>
+            </div>
+
+            <!-- Campaign Manager logs Table -->
+            <div class="glass-panel rounded-xl overflow-hidden border border-white/5">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-surface-container-highest border-b border-white/5">
+                                <th class="py-3 px-4 font-label-technical text-label-technical text-on-surface-variant">Role / Company</th>
+                                <th class="py-3 px-4 font-label-technical text-label-technical text-on-surface-variant">ATS Score</th>
+                                <th class="py-3 px-4 font-label-technical text-label-technical text-on-surface-variant">Status</th>
+                                <th class="py-3 px-4 font-label-technical text-label-technical text-on-surface-variant">Outreach Assets</th>
+                                <th class="py-3 px-4 font-label-technical text-label-technical text-on-surface-variant text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="font-body-md text-sm divide-y divide-white/5" id="campaignsTableBody">
+                            <!-- Javascript dynamic rows from applications log -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== TAB 5: SETTINGS ==================== -->
+        <section id="settings-tab" class="space-y-stack-md hidden">
+            <div>
+                <h1 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface">System Settings</h1>
+                <p class="font-body-md text-on-surface-variant mt-1">Configure your API credentials, Notion workspace integrations, and account settings.</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <!-- API Credentials Config -->
+                <div class="lg:col-span-7 bg-surface-container rounded-lg p-6 border border-white/5 flex flex-col gap-6">
+                    <div>
+                        <h2 class="text-base font-bold text-on-surface">API Credentials</h2>
+                        <p class="text-xs text-on-surface-variant mt-1">Provide your own API keys. If left blank, CareerNexus will fall back to server-level defaults where available.</p>
+                    </div>
+
+                    <form onsubmit="saveApiKeys(event)" id="apiKeysForm" class="flex flex-col gap-4">
+                        <div class="flex flex-col gap-1">
+                            <label class="text-[10px] uppercase font-bold text-on-surface-variant font-label-technical flex items-center gap-1">
+                                Groq API Key <span class="text-primary text-[8px] italic">(For fast Llama processing)</span>
+                            </label>
+                            <input id="keyGroq" class="bg-surface-container-high border border-white/10 rounded px-4 py-2.5 text-xs text-on-surface focus:border-primary outline-none font-mono" type="password" placeholder="gsk_..."/>
+                        </div>
+                        <div class="h-px bg-white/5 my-2"></div>
+                        <div>
+                            <h3 class="text-xs font-bold text-on-surface mb-2 font-label-technical">Notion Sync Configuration</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="flex flex-col gap-1">
+                                    <label class="text-[9px] uppercase font-bold text-on-surface-variant font-label-technical">Notion Integration Token</label>
+                                    <input id="keyNotion" class="bg-surface-container-high border border-white/10 rounded px-4 py-2.5 text-xs text-on-surface focus:border-primary outline-none font-mono" type="password" placeholder="secret_..."/>
+                                </div>
+                                <div class="flex flex-col gap-1">
+                                    <label class="text-[9px] uppercase font-bold text-on-surface-variant font-label-technical">Database ID</label>
+                                    <input id="keyNotionDb" class="bg-surface-container-high border border-white/10 rounded px-4 py-2.5 text-xs text-on-surface focus:border-primary outline-none font-mono" type="text" placeholder="32-char hex string"/>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="h-px bg-white/5 my-2"></div>
+                        <div>
+                            <h3 class="text-xs font-bold text-on-surface mb-2 font-label-technical">Adzuna Job Board Credentials (Optional)</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="flex flex-col gap-1">
+                                    <label class="text-[9px] uppercase font-bold text-on-surface-variant font-label-technical">App ID</label>
+                                    <input id="keyAdzunaId" class="bg-surface-container-high border border-white/10 rounded px-4 py-2.5 text-xs text-on-surface focus:border-primary outline-none font-mono" type="text" placeholder="e.g. 94d58c13"/>
+                                </div>
+                                <div class="flex flex-col gap-1">
+                                    <label class="text-[9px] uppercase font-bold text-on-surface-variant font-label-technical">App Key</label>
+                                    <input id="keyAdzunaKey" class="bg-surface-container-high border border-white/10 rounded px-4 py-2.5 text-xs text-on-surface focus:border-primary outline-none font-mono" type="password" placeholder="e.g. 6dec22..."/>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="submit" id="saveKeysBtn" class="bg-primary hover:bg-primary-fixed text-on-primary font-bold py-2.5 rounded transition-all mt-2 text-xs">
+                            Save API Credentials
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Account Settings Panel -->
+                <div class="lg:col-span-5 flex flex-col gap-6">
+                    <!-- Password Update -->
+                    <div class="bg-surface-container rounded-lg p-6 border border-white/5 flex flex-col gap-4">
+                        <h2 class="text-sm font-bold text-on-surface uppercase tracking-wider font-label-technical">Account Details</h2>
+                        <div class="text-xs">
+                            <span class="text-on-surface-variant">Logged in as:</span>
+                            <span id="settingsUserEmail" class="text-on-surface font-semibold ml-1">loading...</span>
+                        </div>
+                        
+                        <div class="h-px bg-white/5 my-1"></div>
+                        
+                        <form onsubmit="changePassword(event)" id="changePasswordForm" class="flex flex-col gap-3">
+                            <h3 class="text-xs font-bold text-on-surface font-label-technical">Update Password</h3>
+                            <div class="flex flex-col gap-1">
+                                <input required id="newPassword" class="bg-surface-container-high border border-white/10 rounded px-4 py-2.5 text-xs text-on-surface focus:border-primary outline-none" type="password" placeholder="New Password"/>
+                            </div>
+                            <div class="flex flex-col gap-1">
+                                <input required id="confirmNewPassword" class="bg-surface-container-high border border-white/10 rounded px-4 py-2.5 text-xs text-on-surface focus:border-primary outline-none" type="password" placeholder="Confirm New Password"/>
+                            </div>
+                            <button type="submit" id="changePwdBtn" class="bg-secondary hover:bg-secondary-fixed-dim text-background font-bold py-2.5 rounded text-xs transition-colors mt-1">
+                                Update Password
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Logout Button -->
+                    <button onclick="handleLogout()" class="w-full border border-error text-error hover:bg-error-container/20 font-bold py-3 rounded transition-colors text-xs flex items-center justify-center gap-2 cursor-pointer">
+                        <span class="material-symbols-outlined text-sm">logout</span> Logout of Session
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== TAB 6: SUPPORT & FAQ ==================== -->
+        <section id="support-tab" class="space-y-stack-md hidden">
+            <div>
+                <h1 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface">Help & Support</h1>
+                <p class="font-body-md text-on-surface-variant mt-1">Answers to common configuration questions, Notion troubleshooting, and system details.</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <!-- Troubleshooting Diagnostics -->
+                <div class="lg:col-span-5 bg-surface-container rounded-lg p-6 border border-white/5 flex flex-col gap-4">
+                    <div class="flex items-center gap-2 text-primary font-headline-md text-sm font-bold">
+                        <span class="material-symbols-outlined">help</span> Diagnostic Checklist
+                    </div>
+                    <div class="text-xs text-on-surface-variant leading-relaxed space-y-3">
+                        <p>If campaigns are failing to score or write outreach, run through this check:</p>
+                        <ul class="list-disc pl-4 space-y-2">
+                            <li><strong>Resume Check</strong>: Ensure you have uploaded your resume file (PDF or DOCX) in the sidebar. It must contain text.</li>
+                            <li><strong>Groq Connection</strong>: Ensure either your custom Groq API key is saved in <em>Settings</em>, or a valid GROQ_API_KEY is configured in the backend <em>.env</em> file.</li>
+                            <li><strong>Notion Sync failure</strong>: Double check that your Notion database has columns exactly matching: <code>Name</code> (Title), <code>Company</code> (Rich Text), <code>URL</code> (URL), <code>Fit Score</code> (Number), <code>Status</code> (Select), and <code>Date Applied</code> (Date). Ensure your integration token is invited to edit that database.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Accordion FAQ (Col 7) -->
+                <div class="lg:col-span-7 bg-surface-container rounded-lg p-6 border border-white/5 flex flex-col gap-4 font-body-md">
+                    <h2 class="text-base font-bold text-on-surface uppercase tracking-wider font-label-technical">Frequently Asked Questions</h2>
+                    
+                    <div class="space-y-4">
+                        <div class="border-b border-white/10 pb-3">
+                            <h3 class="text-xs font-semibold text-on-surface flex items-center justify-between cursor-pointer" onclick="toggleFaq(1)">
+                                How is the ATS Score calculated?
+                                <span class="material-symbols-outlined text-xs" id="faq-icon-1">expand_more</span>
+                            </h3>
+                            <p class="text-xs text-on-surface-variant mt-2 leading-relaxed hidden" id="faq-ans-1">
+                                The ATS Score is evaluated using the Llama 3.3 model. It performs semantic mapping between the resume's parsed experiences/skills and the job description requirements. It grades formatting, technical keywords overlap, and work experience impact to return a value from 0 to 100.
+                            </p>
+                        </div>
+
+                        <div class="border-b border-white/10 pb-3">
+                            <h3 class="text-xs font-semibold text-on-surface flex items-center justify-between cursor-pointer" onclick="toggleFaq(2)">
+                                Can I use other LLMs?
+                                <span class="material-symbols-outlined text-xs" id="faq-icon-2">expand_more</span>
+                            </h3>
+                            <p class="text-xs text-on-surface-variant mt-2 leading-relaxed hidden" id="faq-ans-2">
+                                Currently, CareerNexus uses Groq's high-speed endpoint (Llama-3.3-70b-versatile) which provides near-instant completions ideal for real-time analysis. Support for custom endpoints is coming in future updates.
+                            </p>
+                        </div>
+
+                        <div class="border-b border-white/10 pb-3">
+                            <h3 class="text-xs font-semibold text-on-surface flex items-center justify-between cursor-pointer" onclick="toggleFaq(3)">
+                                How does the job description filtering work?
+                                <span class="material-symbols-outlined text-xs" id="faq-icon-3">expand_more</span>
+                            </h3>
+                            <p class="text-xs text-on-surface-variant mt-2 leading-relaxed hidden" id="faq-ans-3">
+                                When a search campaign is launched, the scraper filters out closed postings. The ATS scoring agent also evaluates listings for expressions like 'expired' or 'closed' and filters them, providing you with direct apply links to only active jobs.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </div>
+</main>
+
+<!-- Asset viewer Modal (Overlay popup for viewing generated cover letters / emails) -->
+<div id="assetModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm hidden">
+    <div class="glass-panel rounded-xl w-full max-w-3xl overflow-hidden border border-primary/20 shadow-2xl flex flex-col max-h-[85vh]">
+        <div class="bg-surface-container p-4 border-b border-white/10 flex justify-between items-center">
+            <h3 class="font-headline-md text-sm font-bold text-on-surface flex items-center gap-2" id="assetModalTitle">Cover Letter</h3>
+            <button onclick="closeAssetModal()" class="text-on-surface-variant hover:text-on-surface text-xl">✕</button>
+        </div>
+        <div class="p-6 overflow-y-auto whitespace-pre-wrap text-sm text-on-surface-variant leading-relaxed font-mono select-all bg-surface-container-lowest" id="assetModalContent">
+            <!-- Modal Body -->
+        </div>
+        <div class="p-4 bg-surface-container border-t border-white/5 flex justify-end gap-3">
+            <button id="modalCopyBtn" class="bg-primary hover:bg-primary-fixed text-on-primary font-bold px-4 py-2 rounded text-xs transition-colors">Copy to Clipboard</button>
+            <button onclick="closeAssetModal()" class="bg-transparent border border-white/10 hover:bg-white/5 text-on-surface px-4 py-2 rounded text-xs transition-colors">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- Floating Chat Assistant -->
+<div id="floatingChatAssistant" class="fixed bottom-20 right-6 z-50 w-80 glass-panel rounded-xl shadow-2xl overflow-hidden flex flex-col border border-primary/20">
+    <div class="bg-primary/10 p-4 border-b border-primary/20 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary">psychology</span>
+            <span class="font-headline-md text-sm font-bold text-on-surface">Career AI Assistant</span>
+        </div>
+        <span onclick="toggleFloatingChat()" class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-on-surface text-base">close</span>
+    </div>
+    <div id="floatingChatMessages" class="h-64 p-4 overflow-y-auto space-y-4 bg-surface-container-lowest/40 flex flex-col">
+        <div class="bg-surface-variant/30 rounded-lg p-3 text-xs text-on-surface mr-8">
+            Hello! I'm monitoring your career campaign. How can I help you resolve any issues today?
+        </div>
+    </div>
+    <div class="p-4 bg-surface-container border-t border-white/5">
+        <div class="flex flex-col gap-2">
+            <button onclick="floatingQuickPrompt('I encountered an issue with LinkedIn Easy Apply')" class="w-full py-2 px-3 bg-surface-variant/50 hover:bg-surface-variant text-on-surface text-xs rounded text-left flex items-center gap-2 transition-colors">
+                <span class="material-symbols-outlined text-sm">report_problem</span> Report an Issue
+            </button>
+            <button onclick="floatingQuickPrompt('Explain why my ATS score is low')" class="w-full py-2 px-3 bg-surface-variant/50 hover:bg-surface-variant text-on-surface text-xs rounded text-left flex items-center gap-2 transition-colors">
+                <span class="material-symbols-outlined text-sm">edit_note</span> Describe a Problem
+            </button>
+        </div>
+        <div class="mt-3 relative">
+            <input id="floatingChatInput" onkeydown="if(event.key==='Enter') sendFloatingChatMessage()" class="w-full bg-surface-container-highest border border-white/10 rounded px-3 py-2 text-xs text-on-surface focus:border-primary outline-none" placeholder="Type a message..." type="text"/>
+        </div>
+    </div>
+</div>
+
+<!-- Footer status bar -->
+<footer class="fixed bottom-0 w-full z-50 bg-surface-container-lowest/80 backdrop-blur-md border-t border-white/5 flex justify-between items-center px-gutter py-2 text-xs font-label-technical">
+    <div class="text-outline flex items-center gap-2">
+        <span class="w-1.5 h-1.5 rounded-full bg-primary glow-emerald"></span>
+        <span>AI Engine: Llama-3.3-70b</span>
+        <span class="text-white/10">|</span>
+        <span id="statusBarText">System Connection Active</span>
+    </div>
+    <div class="flex gap-4">
+        <a class="text-outline hover:text-on-surface transition-colors" href="#">Terms</a>
+        <a class="text-outline hover:text-on-surface transition-colors" href="#">Privacy</a>
+    </div>
+</footer>
+</div>
+
+<!-- Background Sparks Canvas -->
+<canvas id="sparksCanvas" class="fixed inset-0 w-full h-full -z-10 pointer-events-none"></canvas>
+
+<!-- Auth Container (Overlay) -->
+<div id="authContainer" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/90 backdrop-blur-md hidden">
+    <div class="glass-panel rounded-xl w-full max-w-md p-8 border border-primary/20 shadow-2xl flex flex-col gap-6 relative">
+        <button onclick="closeAuthModal()" class="absolute right-4 top-4 text-on-surface-variant hover:text-on-surface text-lg outline-none cursor-pointer">✕</button>
+        <!-- Logo -->
+        <div class="text-center">
+            <div class="font-headline-md text-3xl font-bold text-primary flex items-center justify-center gap-2">
+                <span class="material-symbols-outlined text-primary text-4xl">psychology</span>
+                <span>CareerNexus</span>
+            </div>
+            <p class="text-xs text-on-surface-variant mt-2 font-label-technical">AI Resume Scorer & Multi-Agent Campaigns</p>
+        </div>
+
+        <!-- Form Toggle Tabs -->
+        <div class="flex border-b border-white/10">
+            <button onclick="toggleAuthTab('login')" id="authToggleLogin" class="flex-grow pb-3 text-sm font-semibold border-b-2 border-primary text-primary transition-colors cursor-pointer outline-none">Sign In</button>
+            <button onclick="toggleAuthTab('register')" id="authToggleRegister" class="flex-grow pb-3 text-sm font-semibold border-b-2 border-transparent text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer outline-none">Create Account</button>
+        </div>
+
+        <!-- Login Form -->
+        <form id="loginForm" onsubmit="handleLogin(event)" class="flex flex-col gap-4">
+            <div class="flex flex-col gap-1">
+                <label class="text-[10px] uppercase font-bold text-on-surface-variant font-label-technical">Email Address</label>
+                <input required id="loginEmail" class="bg-surface-container border border-white/10 rounded px-4 py-2.5 text-xs text-on-surface focus:border-primary outline-none" type="email" placeholder="you@example.com"/>
+            </div>
+            <div class="flex flex-col gap-1">
+                <label class="text-[10px] uppercase font-bold text-on-surface-variant font-label-technical">Password</label>
+                <input required id="loginPassword" class="bg-surface-container border border-white/10 rounded px-4 py-2.5 text-xs text-on-surface focus:border-primary outline-none" type="password" placeholder="••••••••"/>
+            </div>
+            <button type="submit" id="loginSubmitBtn" class="bg-primary hover:bg-primary-fixed text-on-primary font-bold py-3 rounded transition-all mt-2 text-xs flex items-center justify-center gap-2 cursor-pointer outline-none">
+                Sign In
+            </button>
+        </form>
+
+        <!-- Register Form (Hidden by default) -->
+        <form id="registerForm" onsubmit="handleRegister(event)" class="flex flex-col gap-4 hidden">
+            <div class="flex flex-col gap-1">
+                <label class="text-[10px] uppercase font-bold text-on-surface-variant font-label-technical">Email Address</label>
+                <input required id="registerEmail" class="bg-surface-container border border-white/10 rounded px-4 py-2.5 text-xs text-on-surface focus:border-primary outline-none" type="email" placeholder="you@example.com"/>
+            </div>
+            <div class="flex flex-col gap-1">
+                <label class="text-[10px] uppercase font-bold text-on-surface-variant font-label-technical">Password</label>
+                <input required id="registerPassword" class="bg-surface-container border border-white/10 rounded px-4 py-2.5 text-xs text-on-surface focus:border-primary outline-none" type="password" placeholder="Min 6 characters"/>
+            </div>
+            <div class="flex flex-col gap-1">
+                <label class="text-[10px] uppercase font-bold text-on-surface-variant font-label-technical">Confirm Password</label>
+                <input required id="registerConfirmPassword" class="bg-surface-container border border-white/10 rounded px-4 py-2.5 text-xs text-on-surface focus:border-primary outline-none" type="password" placeholder="••••••••"/>
+            </div>
+            <button type="submit" id="registerSubmitBtn" class="bg-primary hover:bg-primary-fixed text-on-primary font-bold py-3 rounded transition-all mt-2 text-xs flex items-center justify-center gap-2 cursor-pointer outline-none">
+                Create Account
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Public Landing Page -->
+<div id="landingPage" class="relative z-10 w-full min-h-screen bg-[#111317]/60 text-on-surface overflow-y-auto flex flex-col hidden pb-10">
+    <!-- Public Navbar -->
+    <header class="fixed top-0 w-full z-50 bg-[#111317]/80 backdrop-blur-xl flex justify-between items-center h-20 px-8 md:px-16 border-b border-white/5">
+        <div class="font-headline-md text-2xl font-bold text-primary flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary text-3xl">psychology</span>
+            <span>CareerNexus</span>
+        </div>
+        <div class="hidden md:flex items-center gap-8 text-xs font-semibold text-on-surface-variant">
+            <a href="#checker-demo" class="hover:text-primary transition-colors">Resume Analyzer</a>
+            <a href="#two-tier" class="hover:text-primary transition-colors">Dual Audit Architecture</a>
+            <a href="#checks-matrix" class="hover:text-primary transition-colors">27 Inspection Points</a>
+            <a href="#deep-features" class="hover:text-primary transition-colors">Agent Capabilities</a>
+            <a href="#faq" class="hover:text-primary transition-colors">FAQ</a>
+        </div>
+        <button onclick="showAuthModal('login')" class="bg-primary hover:bg-primary-fixed text-on-primary font-bold text-xs py-2.5 px-6 rounded-full transition-all cursor-pointer shadow-lg outline-none flex items-center gap-1.5 glow-emerald">
+            <span class="material-symbols-outlined text-sm">login</span> Sign In
+        </button>
+    </header>
+
+    <!-- Page 1: Hero Section & Live Upload Box -->
+    <section id="checker-demo" class="max-w-6xl mx-auto pt-36 px-6 pb-20 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center scroll-mt-24">
+        <div class="lg:col-span-7 flex flex-col gap-6 text-left">
+            <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-label-technical font-bold uppercase tracking-wider select-none w-fit">
+                <span class="w-2 h-2 rounded-full bg-primary glow-emerald animate-pulse"></span> Multi-Agent AI System
+            </div>
+            <h1 class="text-4xl md:text-6xl font-extrabold text-on-surface tracking-tight leading-tight select-none">
+                Is your resume ready for <br/><span class="bg-gradient-to-r from-primary via-emerald-300 to-teal-400 bg-clip-text text-transparent">AI Recruiter Screening?</span>
+            </h1>
+            <p class="text-sm md:text-base text-on-surface-variant max-w-2xl leading-relaxed">
+                CareerNexus deploys autonomous multi-agent Llama-3.3 intelligence to grade your resume across <strong>27 critical factors</strong>, ensuring seamless compatibility with modern Applicant Tracking Systems.
+            </p>
+            
+            <!-- Live Upload Box -->
+            <div onclick="showAuthModal('register')" class="border-2 border-dashed border-primary/40 hover:border-primary bg-primary/5 hover:bg-primary/10 transition-all rounded-xl p-8 text-center flex flex-col items-center gap-3 cursor-pointer group">
+                <span class="material-symbols-outlined text-primary text-4xl group-hover:scale-110 transition-transform">cloud_upload</span>
+                <p class="text-xs text-on-surface-variant font-medium">Drop your resume file here or choose a document.<br/><span class="text-[10px] text-outline">PDF & DOCX formats supported. Max 5MB size limit.</span></p>
+                <button class="bg-primary text-on-primary font-bold text-xs py-2.5 px-6 rounded-full shadow-md mt-1 cursor-pointer">
+                    Analyze Resume Compatibility
+                </button>
+            </div>
+            
+            <div class="flex items-center gap-2 text-[11px] text-on-surface-variant/70 font-label-technical">
+                <span class="material-symbols-outlined text-sm text-primary">lock</span>
+                <span>End-to-end privacy guaranteed. Your resume is never sold or used for model training.</span>
+            </div>
+        </div>
+
+        <!-- Right Side Simulated Scanner Preview -->
+        <div class="lg:col-span-5 flex justify-center">
+            <div class="glass-panel border border-white/10 rounded-2xl p-6 shadow-2xl w-full max-w-md flex flex-col gap-6 relative glow-emerald">
+                <div class="flex justify-between items-center border-b border-white/10 pb-4">
+                    <div class="flex items-center gap-2">
+                        <span class="w-3 h-3 rounded-full bg-red-500/80"></span>
+                        <span class="w-3 h-3 rounded-full bg-yellow-500/80"></span>
+                        <span class="w-3 h-3 rounded-full bg-green-500/80"></span>
+                        <span class="text-xs font-mono text-on-surface-variant ml-2">CareerNexus_Agent_v3.3</span>
+                    </div>
+                    <span class="text-xs font-bold text-primary px-2 py-0.5 bg-primary/10 rounded">92% Match Score</span>
+                </div>
+                <div class="space-y-4">
+                    <div class="flex justify-between items-center text-xs">
+                        <span class="text-on-surface-variant">Structural Extractability Rate</span>
+                        <span class="text-primary font-bold">95%</span>
+                    </div>
+                    <div class="w-full bg-white/5 h-2 rounded overflow-hidden">
+                        <div class="bg-primary h-full w-[95%]"></div>
+                    </div>
+                    <div class="flex justify-between items-center text-xs">
+                        <span class="text-on-surface-variant">Job Keyword Density</span>
+                        <span class="text-primary font-bold">88%</span>
+                    </div>
+                    <div class="w-full bg-white/5 h-2 rounded overflow-hidden">
+                        <div class="bg-primary h-full w-[88%]"></div>
+                    </div>
+                    <div class="flex justify-between items-center text-xs">
+                        <span class="text-on-surface-variant">Quantified Metric Statements</span>
+                        <span class="text-primary font-bold">92%</span>
+                    </div>
+                    <div class="w-full bg-white/5 h-2 rounded overflow-hidden">
+                        <div class="bg-primary h-full w-[92%]"></div>
+                    </div>
+                </div>
+                <div class="p-3 bg-surface-container-low border border-white/5 rounded-lg flex items-center gap-3">
+                    <span class="material-symbols-outlined text-primary text-xl">verified</span>
+                    <span class="text-xs text-on-surface">Verified for Fortune 500 ATS screening pipelines</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Page 2: Dual Audit System Architecture -->
+    <section id="two-tier" class="bg-surface-container-lowest/50 border-y border-white/5 py-24 px-6 scroll-mt-24">
+        <div class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+            <!-- Left Machine Illustration -->
+            <div class="lg:col-span-5 flex justify-center">
+                <div class="glass-panel border border-primary/20 rounded-2xl p-8 text-center flex flex-col items-center gap-6 relative shadow-2xl">
+                    <div class="w-20 h-20 rounded-2xl bg-primary/10 border border-primary/30 flex items-center justify-center glow-emerald">
+                        <span class="material-symbols-outlined text-primary text-4xl">memory</span>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-on-surface">Dual Evaluation Pipeline</h3>
+                        <p class="text-xs text-on-surface-variant mt-2">Pass 1 checks structural text parsability. Pass 2 grades role relevance.</p>
+                    </div>
+                    <div class="flex gap-2 w-full">
+                        <div class="flex-1 p-3 bg-surface-container rounded-lg text-left">
+                            <span class="text-[10px] uppercase text-primary font-bold block">Pass 1</span>
+                            <span class="text-xs text-on-surface">Parsability</span>
+                        </div>
+                        <div class="flex-1 p-3 bg-surface-container rounded-lg text-left">
+                            <span class="text-[10px] uppercase text-primary font-bold block">Pass 2</span>
+                            <span class="text-xs text-on-surface">Impact Metrics</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Text -->
+            <div class="lg:col-span-7 flex flex-col gap-6 text-left">
+                <h2 class="text-3xl font-extrabold text-on-surface">
+                    Engineered around a <span class="text-primary">dual-pass evaluation pipeline</span>
+                </h2>
+                <p class="text-sm text-on-surface-variant leading-relaxed">
+                    Modern hiring workflows employ automated filtering before human recruiters ever inspect your profile. CareerNexus mirrors this process in two distinct phases:
+                </p>
+                <div class="space-y-6">
+                    <div class="flex items-start gap-4">
+                        <div class="w-8 h-8 rounded-full bg-primary/20 text-primary font-bold text-sm flex items-center justify-center shrink-0">1</div>
+                        <div>
+                            <h4 class="text-sm font-bold text-on-surface">Structural & Syntactic Parsability (Pass 1)</h4>
+                            <p class="text-xs text-on-surface-variant mt-1 leading-relaxed">
+                                Verifies section headers, font hierarchy, date formatting, and keyword extraction rates against industry systems like Greenhouse, Lever, Workday, and BambooHR.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-4">
+                        <div class="w-8 h-8 rounded-full bg-primary/20 text-primary font-bold text-sm flex items-center justify-center shrink-0">2</div>
+                        <div>
+                            <h4 class="text-sm font-bold text-on-surface">Semantic Relevance & Impact Grading (Pass 2)</h4>
+                            <p class="text-xs text-on-surface-variant mt-1 leading-relaxed">
+                                Evaluates bullet-point metrics, action verb strength, ambiguity, and technical stack overlap using Llama-3.3 reasoning.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Page 3: 27 Inspection Points Matrix -->
+    <section id="checks-matrix" class="max-w-6xl mx-auto py-24 px-6 text-center flex flex-col gap-12 scroll-mt-24">
+        <div class="space-y-4 max-w-3xl mx-auto">
+            <h2 class="text-3xl md:text-4xl font-extrabold text-on-surface">
+                Deep-spectrum evaluation beyond basic spellchecking
+            </h2>
+            <p class="text-xs md:text-sm text-on-surface-variant leading-relaxed">
+                Our autonomous agents inspect <strong>27 distinct parameters</strong> across six core assessment domains:
+            </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 text-left">
+            <!-- Card 1 -->
+            <div onclick="showAuthModal('register')" class="glass-panel border border-white/5 rounded-xl p-6 flex flex-col gap-4 hover:border-primary/40 transition-all cursor-pointer">
+                <div class="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                    <span class="material-symbols-outlined text-xl">description</span>
+                </div>
+                <h3 class="text-base font-bold text-on-surface">System Parsability</h3>
+                <ul class="space-y-2 text-xs text-on-surface-variant">
+                    <li class="flex items-center gap-2"><span class="text-primary font-bold">✓</span> PDF format compliance</li>
+                    <li class="flex items-center gap-2"><span class="text-primary font-bold">✓</span> Structural text extraction</li>
+                    <li class="flex items-center gap-2"><span class="text-primary font-bold">✓</span> Standard section headers</li>
+                    <li class="flex items-center gap-2"><span class="text-primary font-bold">✓</span> Clean date formatting</li>
+                    <li class="flex items-center gap-2"><span class="text-primary font-bold">✓</span> File naming conventions</li>
+                    <li class="flex items-center gap-2"><span class="text-primary font-bold">✓</span> URL link validity</li>
+                </ul>
+            </div>
+
+            <!-- Card 2 -->
+            <div onclick="showAuthModal('register')" class="glass-panel border border-white/5 rounded-xl p-6 flex flex-col gap-4 hover:border-primary/40 transition-all cursor-pointer">
+                <div class="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                    <span class="material-symbols-outlined text-xl">edit_note</span>
+                </div>
+                <h3 class="text-base font-bold text-on-surface">Impact & Metrics</h3>
+                <ul class="space-y-2 text-xs text-on-surface-variant">
+                    <li class="flex items-center gap-2"><span class="text-primary font-bold">✓</span> Quantified achievement ratios</li>
+                    <li class="flex items-center gap-2"><span class="text-primary font-bold">✓</span> Action verb density</li>
+                    <li class="flex items-center gap-2"><span class="text-primary font-bold">✓</span> Bullet conciseness</li>
+                    <li class="flex items-center gap-2"><span class="text-primary font-bold">✓</span> Redundancy elimination</li>
+                    <li class="flex items-center gap-2"><span class="text-primary font-bold">✓</span> Grammar & tone consistency</li>
+                </ul>
+            </div>
+
+            <!-- Card 3 -->
+            <div onclick="showAuthModal('register')" class="glass-panel border border-white/5 rounded-xl p-6 flex flex-col gap-4 hover:border-primary/40 transition-all cursor-pointer">
+                <div class="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                    <span class="material-symbols-outlined text-xl">flag</span>
+                </div>
+                <h3 class="text-base font-bold text-on-surface">Candidate Red Flags</h3>
+                <ul class="space-y-2 text-xs text-on-surface-variant">
+                    <li class="flex items-center gap-2"><span class="text-primary font-bold">✓</span> Career timeline gaps</li>
+                    <li class="flex items-center gap-2"><span class="text-primary font-bold">✓</span> Ambiguity detection</li>
+                    <li class="flex items-center gap-2"><span class="text-primary font-bold">✓</span> Skill credibility scoring</li>
+                    <li class="flex items-center gap-2"><span class="text-primary font-bold">✓</span> LinkedIn alignment verification</li>
+                </ul>
+            </div>
+
+            <!-- Card 4 -->
+            <div onclick="showAuthModal('register')" class="glass-panel border border-white/5 rounded-xl p-6 flex flex-col gap-4 hover:border-primary/40 transition-all cursor-pointer">
+                <div class="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                    <span class="material-symbols-outlined text-xl">view_list</span>
+                </div>
+                <h3 class="text-base font-bold text-on-surface">Section Structure</h3>
+                <ul class="space-y-2 text-xs text-on-surface-variant">
+                    <li class="flex items-center gap-2"><span class="text-primary font-bold">✓</span> Contact details verification</li>
+                    <li class="flex items-center gap-2"><span class="text-primary font-bold">✓</span> Core skills placement</li>
+                    <li class="flex items-center gap-2"><span class="text-primary font-bold">✓</span> Experience chronological ordering</li>
+                </ul>
+            </div>
+
+            <!-- Card 5 -->
+            <div onclick="showAuthModal('register')" class="glass-panel border border-white/5 rounded-xl p-6 flex flex-col gap-4 hover:border-primary/40 transition-all cursor-pointer">
+                <div class="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                    <span class="material-symbols-outlined text-xl">target</span>
+                </div>
+                <h3 class="text-base font-bold text-on-surface">Role Alignment</h3>
+                <ul class="space-y-2 text-xs text-on-surface-variant">
+                    <li class="flex items-center gap-2"><span class="text-primary font-bold">✓</span> Target title matching</li>
+                    <li class="flex items-center gap-2"><span class="text-primary font-bold">✓</span> Hard technical skills gap analysis</li>
+                    <li class="flex items-center gap-2"><span class="text-primary font-bold">✓</span> Soft skills mapping</li>
+                    <li class="flex items-center gap-2"><span class="text-primary font-bold">✓</span> Domain keyword density</li>
+                </ul>
+            </div>
+
+            <!-- Card 6 -->
+            <div onclick="showAuthModal('register')" class="glass-panel border border-white/5 rounded-xl p-6 flex flex-col gap-4 hover:border-primary/40 transition-all cursor-pointer">
+                <div class="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                    <span class="material-symbols-outlined text-xl">workspace_premium</span>
+                </div>
+                <h3 class="text-base font-bold text-on-surface">Seniority & Bias</h3>
+                <ul class="space-y-2 text-xs text-on-surface-variant">
+                    <li class="flex items-center gap-2"><span class="text-primary font-bold">✓</span> Unintentional date/age bias prevention</li>
+                    <li class="flex items-center gap-2"><span class="text-primary font-bold">✓</span> Leadership signals</li>
+                    <li class="flex items-center gap-2"><span class="text-primary font-bold">✓</span> Ownership metrics</li>
+                    <li class="flex items-center gap-2"><span class="text-primary font-bold">✓</span> Promotion trajectory</li>
+                    <li class="flex items-center gap-2"><span class="text-primary font-bold">✓</span> Peer benchmarking</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Page 4: Deep Feature Row Showcases -->
+    <section id="deep-features" class="bg-surface-container-lowest/30 border-t border-white/5 py-24 px-6 scroll-mt-24">
+        <div class="max-w-6xl mx-auto space-y-24">
+            <!-- Row 1 -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+                <div class="lg:col-span-6 space-y-4 text-left">
+                    <h3 class="text-2xl font-bold text-on-surface">Reverse-engineered ATS parsers</h3>
+                    <p class="text-xs text-on-surface-variant leading-relaxed">
+                        Test how your resume extracts across top ATS software algorithms to eliminate hidden parsing glitches before submitting applications.
+                    </p>
+                </div>
+                <div class="lg:col-span-6 glass-panel p-6 rounded-2xl border border-white/10">
+                    <div class="p-4 bg-surface-container rounded-lg flex items-center justify-between text-xs border border-white/5">
+                        <span>Parsing Reliability Grade</span>
+                        <span class="text-primary font-bold">100% Parsed</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 2 -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+                <div class="lg:col-span-6 lg:order-2 space-y-4 text-left">
+                    <h3 class="text-2xl font-bold text-on-surface">Targeted Job Keyword Alignment</h3>
+                    <p class="text-xs text-on-surface-variant leading-relaxed">
+                        Input any target job posting to uncover missing technical terms, hard skills, and receive AI-suggested bullet rewrites.
+                    </p>
+                </div>
+                <div class="lg:col-span-6 lg:order-1 glass-panel p-6 rounded-2xl border border-white/10">
+                    <div class="p-4 bg-surface-container rounded-lg flex items-center justify-between text-xs border border-white/5">
+                        <span>Skill Gap Identification</span>
+                        <span class="text-primary font-bold">14 Key Terms Suggested</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Page 5: 10 Original CareerNexus FAQ Accordions (Questions 1-3 Open By Default) -->
+    <section id="faq" class="max-w-4xl mx-auto py-24 px-6 text-left space-y-8 scroll-mt-24">
+        <h2 class="text-3xl font-extrabold text-on-surface text-center">Frequently asked questions</h2>
+        
+        <div class="space-y-3">
+            <!-- Question 1: Open by default -->
+            <div onclick="toggleFaq(1)" class="bg-surface-container/60 border border-white/5 hover:border-primary/40 rounded-xl overflow-hidden cursor-pointer select-none transition-all">
+                <div class="w-full p-4 text-left text-xs font-bold text-on-surface flex justify-between items-center outline-none">
+                    <span>How does CareerNexus calculate my ATS score?</span>
+                    <span id="faq-icon-1" class="material-symbols-outlined text-sm text-primary">expand_less</span>
+                </div>
+                <div id="faq-ans-1" class="px-4 pb-4 text-xs text-on-surface-variant leading-relaxed space-y-2">
+                    <p>CareerNexus employs an advanced dual-pass evaluation engine powered by Llama 3.3 70B intelligence.</p>
+                    <p><strong>Pass 1 (Parsability Audit):</strong> Evaluates document structural extractability, section header compliance, font hierarchy, and date formatting against real-world ATS software standards (such as Greenhouse, Lever, Workday, and BambooHR).</p>
+                    <p><strong>Pass 2 (Semantic Relevance):</strong> Compares your experience bullets against target job descriptions, grading technical keyword overlap, action verb density, and quantified achievement ratios to generate an overall 0-100% compatibility rating.</p>
+                </div>
+            </div>
+
+            <!-- Question 2: Open by default -->
+            <div onclick="toggleFaq(2)" class="bg-surface-container/60 border border-white/5 hover:border-primary/40 rounded-xl overflow-hidden cursor-pointer select-none transition-all">
+                <div class="w-full p-4 text-left text-xs font-bold text-on-surface flex justify-between items-center outline-none">
+                    <span>Is my uploaded resume kept private and secure?</span>
+                    <span id="faq-icon-2" class="material-symbols-outlined text-sm text-primary">expand_less</span>
+                </div>
+                <div id="faq-ans-2" class="px-4 pb-4 text-xs text-on-surface-variant leading-relaxed space-y-2">
+                    <p>Yes. Absolute candidate privacy and data security are core design principles of CareerNexus.</p>
+                    <p>All uploaded PDF or DOCX files are parsed in isolated session contexts and stored strictly within your personal, encrypted local SQLite database. We never sell candidate data to 3rd party brokers, share profiles with recruiters without explicit authorization, or retain documents for AI model training.</p>
+                </div>
+            </div>
+
+            <!-- Question 3: Open by default -->
+            <div onclick="toggleFaq(3)" class="bg-surface-container/60 border border-white/5 hover:border-primary/40 rounded-xl overflow-hidden cursor-pointer select-none transition-all">
+                <div class="w-full p-4 text-left text-xs font-bold text-on-surface flex justify-between items-center outline-none">
+                    <span>What is considered a passing ATS score?</span>
+                    <span id="faq-icon-3" class="material-symbols-outlined text-sm text-primary">expand_less</span>
+                </div>
+                <div id="faq-ans-3" class="px-4 pb-4 text-xs text-on-surface-variant leading-relaxed space-y-2">
+                    <p>A overall match score of <strong>75% or higher</strong> is considered optimal for passing automated ATS filters and securing recruiter callbacks.</p>
+                    <p>Scores in this range demonstrate strong structural readability and high technical keyword alignment. If your profile scores below 75%, our ATS Scorer tab highlights missing hard/soft skills and provides color-coded bullet rewrites to boost your rating into the interview tier.</p>
+                </div>
+            </div>
+
+            <!-- Question 4: Closed by default -->
+            <div onclick="toggleFaq(4)" class="bg-surface-container/60 border border-white/5 hover:border-primary/40 rounded-xl overflow-hidden cursor-pointer select-none transition-all">
+                <div class="w-full p-4 text-left text-xs font-bold text-on-surface flex justify-between items-center outline-none">
+                    <span>How do custom Groq API keys work?</span>
+                    <span id="faq-icon-4" class="material-symbols-outlined text-sm">expand_more</span>
+                </div>
+                <div id="faq-ans-4" class="px-4 pb-4 text-xs text-on-surface-variant leading-relaxed hidden space-y-2">
+                    <p>CareerNexus includes default built-in server-side AI credits for immediate out-of-the-box testing.</p>
+                    <p>However, if you input your own free Groq API key in the Settings tab, all LLM reasoning requests (ATS grading, AI career coaching, company research, and outreach letter writing) route directly through your personal developer quota, unlocking maximum Llama-3.3 inference speed and zero shared rate limits.</p>
+                </div>
+            </div>
+
+            <!-- Question 5: Closed by default -->
+            <div onclick="toggleFaq(5)" class="bg-surface-container/60 border border-white/5 hover:border-primary/40 rounded-xl overflow-hidden cursor-pointer select-none transition-all">
+                <div class="w-full p-4 text-left text-xs font-bold text-on-surface flex justify-between items-center outline-none">
+                    <span>Can CareerNexus parse multi-page PDF resumes?</span>
+                    <span id="faq-icon-5" class="material-symbols-outlined text-sm">expand_more</span>
+                </div>
+                <div id="faq-ans-5" class="px-4 pb-4 text-xs text-on-surface-variant leading-relaxed hidden space-y-2">
+                    <p>Yes. CareerNexus handles single-page and multi-page PDF and DOCX files with ease.</p>
+                    <p>For maximum parsing accuracy across commercial recruitment tools, we recommend utilizing standard single-column layouts with clear text hierarchies rather than complex multi-layered vector graphics or embedded image tables.</p>
+                </div>
+            </div>
+
+            <!-- Question 6: Closed by default -->
+            <div onclick="toggleFaq(6)" class="bg-surface-container/60 border border-white/5 hover:border-primary/40 rounded-xl overflow-hidden cursor-pointer select-none transition-all">
+                <div class="w-full p-4 text-left text-xs font-bold text-on-surface flex justify-between items-center outline-none">
+                    <span>How does the Career AI Coach assist my job search?</span>
+                    <span id="faq-icon-6" class="material-symbols-outlined text-sm">expand_more</span>
+                </div>
+                <div id="faq-ans-6" class="px-4 pb-4 text-xs text-on-surface-variant leading-relaxed hidden space-y-2">
+                    <p>The Career AI Coach is an interactive chat mentor equipped with full semantic memory of your loaded resume and active target job descriptions.</p>
+                    <p>You can use the mentor to conduct mock technical interviews, practice behavioral STAR-format responses, draft custom elevator pitches, or debug specific rejection reasons.</p>
+                </div>
+            </div>
+
+            <!-- Question 7: Closed by default -->
+            <div onclick="toggleFaq(7)" class="bg-surface-container/60 border border-white/5 hover:border-primary/40 rounded-xl overflow-hidden cursor-pointer select-none transition-all">
+                <div class="w-full p-4 text-left text-xs font-bold text-on-surface flex justify-between items-center outline-none">
+                    <span>What details are revealed by the Company Intelligence feature?</span>
+                    <span id="faq-icon-7" class="material-symbols-outlined text-sm">expand_more</span>
+                </div>
+                <div id="faq-ans-7" class="px-4 pb-4 text-xs text-on-surface-variant leading-relaxed hidden space-y-2">
+                    <p>The Company Intelligence agent performs deep-dive background research across Wikipedia and public company APIs to build detailed candidate dossiers.</p>
+                    <p>It uncovers workforce headcount estimates, revenue brackets, matching vs. missing tech stack components, corporate culture tags, main market competitors, funding stages, and customized interview cheat sheets.</p>
+                </div>
+            </div>
+
+            <!-- Question 8: Closed by default -->
+            <div onclick="toggleFaq(8)" class="bg-surface-container/60 border border-white/5 hover:border-primary/40 rounded-xl overflow-hidden cursor-pointer select-none transition-all">
+                <div class="w-full p-4 text-left text-xs font-bold text-on-surface flex justify-between items-center outline-none">
+                    <span>How do Multi-Agent Campaigns automate applications?</span>
+                    <span id="faq-icon-8" class="material-symbols-outlined text-sm">expand_more</span>
+                </div>
+                <div id="faq-ans-8" class="px-4 pb-4 text-xs text-on-surface-variant leading-relaxed hidden space-y-2">
+                    <p>Agent Campaigns orchestrate specialized AI agents to automate your job application pipeline.</p>
+                    <p>Upon entering a search query (e.g. <em>"Full Stack Engineer in India"</em>), scraping agents pull live job postings, filter out expired roles, compute ATS compatibility scores, generate tailored Cover Letters, draft recruiter outreach emails, and log every application into your SQLite database.</p>
+                </div>
+            </div>
+
+            <!-- Question 9: Closed by default -->
+            <div onclick="toggleFaq(9)" class="bg-surface-container/60 border border-white/5 hover:border-primary/40 rounded-xl overflow-hidden cursor-pointer select-none transition-all">
+                <div class="w-full p-4 text-left text-xs font-bold text-on-surface flex justify-between items-center outline-none">
+                    <span>Can I synchronize my job search with Notion?</span>
+                    <span id="faq-icon-9" class="material-symbols-outlined text-sm">expand_more</span>
+                </div>
+                <div id="faq-ans-9" class="px-4 pb-4 text-xs text-on-surface-variant leading-relaxed hidden space-y-2">
+                    <p>Yes! CareerNexus features native integration with Notion databases.</p>
+                    <p>By providing your Notion Integration Token and Database ID in the Settings tab, any job discovered during automated campaigns is automatically added as a new row in your personal Notion workspace complete with company name, job URL, fit score, and application date.</p>
+                </div>
+            </div>
+
+            <!-- Question 10: Closed by default -->
+            <div onclick="toggleFaq(10)" class="bg-surface-container/60 border border-white/5 hover:border-primary/40 rounded-xl overflow-hidden cursor-pointer select-none transition-all">
+                <div class="w-full p-4 text-left text-xs font-bold text-on-surface flex justify-between items-center outline-none">
+                    <span>How is CareerNexus different from standard resume checkers?</span>
+                    <span id="faq-icon-10" class="material-symbols-outlined text-sm">expand_more</span>
+                </div>
+                <div id="faq-ans-10" class="px-4 pb-4 text-xs text-on-surface-variant leading-relaxed hidden space-y-2">
+                    <p>Unlike simple spellcheckers or basic keyword counters, CareerNexus is a unified multi-agent career copilot.</p>
+                    <p>It brings together ATS scoring, real-time AI interview coaching, corporate intelligence research, automated job scraping, custom outreach writing, and Notion CRM synchronization in one single platform.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Multi-Column Footer -->
+    <footer class="mt-auto bg-surface-container-lowest border-t border-white/5 pt-16 pb-12 px-8 md:px-16 text-left space-y-12">
+        <div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6 border-b border-white/5 pb-8">
+            <div class="flex items-center gap-3">
+                <div class="flex text-yellow-400">★★★★★</div>
+                <span class="text-xs text-on-surface font-bold">5-Star Multi-Agent Career Engine</span>
+            </div>
+            <div class="text-xs text-on-surface-variant">Powered by Llama-3.3 70B & FastAPI.</div>
+        </div>
+
+        <div class="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-xs">
+            <div class="space-y-3">
+                <div class="font-bold text-on-surface uppercase tracking-wider text-[10px] text-primary">Platform Agents</div>
+                <ul class="space-y-2 text-on-surface-variant">
+                    <li><a href="#" class="hover:text-on-surface">ATS Resume Analyzer</a></li>
+                    <li><a href="#" class="hover:text-on-surface">Career AI Coach</a></li>
+                    <li><a href="#" class="hover:text-on-surface">Company Intelligence</a></li>
+                    <li><a href="#" class="hover:text-on-surface">Agent Job Campaigns</a></li>
+                </ul>
+            </div>
+            <div class="space-y-3">
+                <div class="font-bold text-on-surface uppercase tracking-wider text-[10px] text-primary">Documentation</div>
+                <ul class="space-y-2 text-on-surface-variant">
+                    <li><a href="#" class="hover:text-on-surface">ATS Keyword Guide</a></li>
+                    <li><a href="#" class="hover:text-on-surface">Action Verb Handbook</a></li>
+                    <li><a href="#" class="hover:text-on-surface">Notion CRM Setup</a></li>
+                    <li><a href="#" class="hover:text-on-surface">Help Center</a></li>
+                </ul>
+            </div>
+            <div class="space-y-3">
+                <div class="font-bold text-on-surface uppercase tracking-wider text-[10px] text-primary">Technology Stack</div>
+                <ul class="space-y-2 text-on-surface-variant">
+                    <li><a href="#" class="hover:text-on-surface">Llama 3.3 70B Engine</a></li>
+                    <li><a href="#" class="hover:text-on-surface">FastAPI Async Server</a></li>
+                    <li><a href="#" class="hover:text-on-surface">SQLite 3 Storage</a></li>
+                    <li><a href="#" class="hover:text-on-surface">Groq API Acceleration</a></li>
+                </ul>
+            </div>
+            <div class="space-y-3">
+                <div class="font-bold text-on-surface uppercase tracking-wider text-[10px] text-primary">Account & Security</div>
+                <ul class="space-y-2 text-on-surface-variant">
+                    <li><a href="#" class="hover:text-on-surface">Terms of Service</a></li>
+                    <li><a href="#" class="hover:text-on-surface">Privacy Policy</a></li>
+                    <li><a href="#" class="hover:text-on-surface">Cookie Preferences</a></li>
+                    <li><a href="#" class="hover:text-on-surface">Security Overview</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="max-w-6xl mx-auto text-center text-[10px] text-on-surface-variant/40 font-label-technical">
+            © 2026 CareerNexus. All rights reserved. Proprietary Multi-Agent Job Search System.
+        </div>
+    </footer>
+</div>
+
+<script>
+    // Global Application State variables
+    let resumeText = '';
+    let uploadedResumeName = '';
+    let chatHistory = [];
+    let activeCampaigns = [];
+
+    // ── Header Notifications Dropdown Controls ─────────────────
+    function toggleNotificationsDropdown() {
+        const dd = document.getElementById('notificationsDropdown');
+        if (dd) dd.classList.toggle('hidden');
+    }
+
+    function addNotification(type, message) {
+        const list = document.getElementById('notificationsList');
+        if (!list) return;
+        
+        const item = document.createElement('div');
+        item.className = "border-b border-white/5 pb-2 pt-1";
+        item.innerHTML = `<span class="text-primary font-semibold">● ${type}</span> ${message}`;
+        
+        list.insertBefore(item, list.firstChild);
+        
+        if (list.children.length > 5) {
+            list.removeChild(list.lastChild);
+        }
+    }
+
+    // ── Floating Chat Assistant Controls ───────────────────────
+    function toggleFloatingChat() {
+        const chat = document.getElementById('floatingChatAssistant');
+        if (chat) {
+            chat.classList.toggle('hidden');
+        }
+    }
+
+    async function sendFloatingChatMessage() {
+        const input = document.getElementById('floatingChatInput');
+        const text = input.value.trim();
+        if (!text) return;
+
+        appendFloatingChatMessage("user", text);
+        input.value = '';
+
+        const jd = document.getElementById('atsJdText').value.trim();
+        const fd = new FormData();
+        fd.append('message', text);
+        fd.append('history', JSON.stringify(chatHistory));
+        fd.append('resume', resumeText);
+        fd.append('jd', jd);
+
+        setAgentActive("critic", "Coach is typing...");
+
+        try {
+            const res = await fetch('/chat', { method: 'POST', body: fd });
+            const data = await res.json();
+            
+            appendFloatingChatMessage("assistant", data.reply);
+            
+            chatHistory.push({"role": "user", "content": text});
+            chatHistory.push({"role": "assistant", "content": data.reply});
+            
+            setAgentIdle("critic");
+        } catch(e) {
+            appendFloatingChatMessage("assistant", "I had trouble connecting. Error: " + e.message);
+            setAgentIdle("critic");
+        }
+    }
+
+    function appendFloatingChatMessage(role, text) {
+        const container = document.getElementById('floatingChatMessages');
+        const msgDiv = document.createElement('div');
+        if (role === 'user') {
+            msgDiv.className = "bg-primary-container/20 border border-primary/20 text-on-surface text-xs rounded-lg p-3 self-end ml-8 max-w-[85%]";
+        } else {
+            msgDiv.className = "bg-surface-variant/30 border border-white/5 text-on-surface-variant text-xs rounded-lg p-3 mr-8 max-w-[85%]";
+        }
+        msgDiv.textContent = text;
+        container.appendChild(msgDiv);
+        container.scrollTop = container.scrollHeight;
+    }
+
+    function floatingQuickPrompt(promptText) {
+        document.getElementById('floatingChatInput').value = promptText;
+        sendFloatingChatMessage();
+    }
+
+    // ── Session Authentication & Settings Controls ──────────────
+    window.addEventListener('load', () => {
+        initSparksCanvas();
+        checkAuth();
+    });
+
+    // Click outside notifications dropdown to close it
+    document.addEventListener('click', (event) => {
+        const dd = document.getElementById('notificationsDropdown');
+        const icon = document.querySelector('[data-icon="notifications"]');
+        if (dd && !dd.classList.contains('hidden')) {
+            if (!dd.contains(event.target) && event.target !== icon) {
+                dd.classList.add('hidden');
+            }
+        }
+    });
+
+    // ── Interactive Sparks Backdrop ──────────────────────
+    let canvas, ctx, width, height;
+    let particles = [];
+    let isLandingPageVisible = true;
+
+    function initSparksCanvas() {
+        canvas = document.getElementById('sparksCanvas');
+        if (!canvas) return;
+        ctx = canvas.getContext('2d');
+        resizeCanvas();
+        
+        window.addEventListener('resize', resizeCanvas);
+        window.addEventListener('mousemove', handleMouseMoveSparks);
+        
+        animateSparks();
+    }
+
+    function resizeCanvas() {
+        if (!canvas) return;
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+    }
+
+    function handleMouseMoveSparks(e) {
+        if (!isLandingPageVisible) return;
+        
+        // Spawn 4 spark particles on cursor move
+        for (let i = 0; i < 4; i++) {
+            particles.push({
+                x: e.clientX,
+                y: e.clientY,
+                vx: (Math.random() - 0.5) * 5,
+                vy: (Math.random() - 0.5) * 5 - Math.random() * 2, // upward float
+                size: Math.random() * 2.5 + 0.8,
+                alpha: 1.0,
+                decay: Math.random() * 0.025 + 0.015,
+                color: Math.random() > 0.4 ? 'rgba(78, 222, 163, ' : 'rgba(52, 211, 153, ' // Emerald/Green sparks
+            });
+        }
+    }
+
+    function animateSparks() {
+        if (!canvas) return;
+        
+        if (isLandingPageVisible) {
+            ctx.clearRect(0, 0, width, height);
+            
+            // Draw & update sparks
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.alpha -= p.decay;
+                
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fillStyle = p.color + p.alpha + ')';
+                
+                // Add soft glowing bloom filter
+                ctx.shadowBlur = 6;
+                ctx.shadowColor = 'rgba(78, 222, 163, 0.5)';
+                ctx.fill();
+                
+                if (p.alpha <= 0) {
+                    particles.splice(i, 1);
+                }
+            }
+        }
+        
+        requestAnimationFrame(animateSparks);
+    }
+
+    function showAuthModal(mode) {
+        document.getElementById('authContainer').classList.remove('hidden');
+        toggleAuthTab(mode);
+    }
+    
+    function closeAuthModal() {
+        document.getElementById('authContainer').classList.add('hidden');
+    }
+
+    async function checkAuth() {
+        try {
+            const res = await fetch('/me');
+            if (res.status === 401) {
+                // Show Landing Page & Sparks canvas, Hide Dashboard
+                isLandingPageVisible = true;
+                document.getElementById('landingPage').classList.remove('hidden');
+                document.getElementById('dashboardApp').classList.add('hidden');
+                document.getElementById('authContainer').classList.add('hidden');
+                document.getElementById('sparksCanvas').classList.remove('hidden');
+                setStatusBar("Welcome to CareerNexus - Sign in to configure dashboard");
+                return;
+            }
+            const data = await res.json();
+            
+            // Hide Landing Page & Sparks canvas, Show Dashboard
+            isLandingPageVisible = false;
+            document.getElementById('landingPage').classList.add('hidden');
+            document.getElementById('dashboardApp').classList.remove('hidden');
+            document.getElementById('authContainer').classList.add('hidden');
+            document.getElementById('sparksCanvas').classList.add('hidden');
+            
+            // Set User Details
+            document.getElementById('settingsUserEmail').textContent = data.email;
+            
+            // Populate resume if loaded
+            if (data.resume_text && data.resume_filename) {
+                resumeText = data.resume_text;
+                uploadedResumeName = data.resume_filename;
+                document.getElementById('resumeUploadSection').classList.add('hidden');
+                document.getElementById('resumeInfoSection').classList.remove('hidden');
+                document.getElementById('globalResumeName').textContent = data.resume_filename;
+                document.getElementById('resumeDot').className = 'w-2 h-2 rounded-full bg-primary glow-emerald';
+            }
+            
+            // Populate API keys in Settings form
+            const keys = data.keys || {};
+            document.getElementById('keyGroq').value = keys.groq_key || '';
+            document.getElementById('keyNotion').value = keys.notion_key || '';
+            document.getElementById('keyNotionDb').value = keys.notion_db || '';
+            document.getElementById('keyAdzunaId').value = keys.adzuna_id || '';
+            document.getElementById('keyAdzunaKey').value = keys.adzuna_key || '';
+            
+            setStatusBar("System Connection Active - Authenticated");
+            
+            // Load user campaigns
+            loadCampaigns();
+        } catch (e) {
+            console.error("Auth check failed:", e);
+            document.getElementById('authContainer').classList.remove('hidden');
+        }
+    }
+
+    async function handleLogin(e) {
+        e.preventDefault();
+        const email = document.getElementById('loginEmail').value.trim();
+        const password = document.getElementById('loginPassword').value;
+        const btn = document.getElementById('loginSubmitBtn');
+        
+        btn.disabled = true;
+        btn.innerHTML = `<span class="w-4 h-4 border-2 border-on-primary border-t-transparent rounded-full animate-spin"></span> Connecting...`;
+        
+        const fd = new FormData();
+        fd.append('email', email);
+        fd.append('password', password);
+        
+        try {
+            const res = await fetch('/login', { method: 'POST', body: fd });
+            const data = await res.json();
+            if (data.error) {
+                alert(data.error);
+                return;
+            }
+            await checkAuth();
+        } catch(err) {
+            alert("Login failed: " + err.message);
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = "Sign In";
+        }
+    }
+
+    async function handleRegister(e) {
+        e.preventDefault();
+        const email = document.getElementById('registerEmail').value.trim();
+        const password = document.getElementById('registerPassword').value;
+        const confirmPassword = document.getElementById('registerConfirmPassword').value;
+        const btn = document.getElementById('registerSubmitBtn');
+        
+        if (password.length < 6) {
+            alert("Password must be at least 6 characters long.");
+            return;
+        }
+        if (password !== confirmPassword) {
+            alert("Passwords do not match.");
+            return;
+        }
+        
+        btn.disabled = true;
+        btn.innerHTML = `<span class="w-4 h-4 border-2 border-on-primary border-t-transparent rounded-full animate-spin"></span> Creating account...`;
+        
+        const fd = new FormData();
+        fd.append('email', email);
+        fd.append('password', password);
+        
+        try {
+            const res = await fetch('/register', { method: 'POST', body: fd });
+            const data = await res.json();
+            if (data.error) {
+                alert(data.error);
+                return;
+            }
+            // Auto login user immediately after successful registration
+            const fdLogin = new FormData();
+            fdLogin.append('email', email);
+            fdLogin.append('password', password);
+            
+            const resLogin = await fetch('/login', { method: 'POST', body: fdLogin });
+            const dataLogin = await resLogin.json();
+            if (!dataLogin.error) {
+                await checkAuth();
+            } else {
+                alert("Account created! Please sign in using your credentials.");
+                toggleAuthTab('login');
+                document.getElementById('loginEmail').value = email;
+            }
+        } catch(err) {
+            alert("Registration failed: " + err.message);
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = "Create Account";
+        }
+    }
+
+    async function handleLogout() {
+        if(!confirm("Are you sure you want to sign out?")) return;
+        try {
+            await fetch('/logout', { method: 'POST' });
+            resumeText = '';
+            uploadedResumeName = '';
+            chatHistory = [];
+            activeCampaigns = [];
+            clearGlobalResume();
+            document.getElementById('apiKeysForm').reset();
+            document.getElementById('changePasswordForm').reset();
+            
+            checkAuth();
+        } catch(e) {
+            alert("Logout failed: " + e.message);
+        }
+    }
+
+    async function saveApiKeys(e) {
+        e.preventDefault();
+        const btn = document.getElementById('saveKeysBtn');
+        btn.disabled = true;
+        btn.textContent = "Saving Credentials...";
+        
+        const fd = new FormData();
+        fd.append('groq_key', document.getElementById('keyGroq').value);
+        fd.append('notion_key', document.getElementById('keyNotion').value);
+        fd.append('notion_db', document.getElementById('keyNotionDb').value);
+        fd.append('adzuna_id', document.getElementById('keyAdzunaId').value);
+        fd.append('adzuna_key', document.getElementById('keyAdzunaKey').value);
+        
+        try {
+            const res = await fetch('/settings/update-keys', { method: 'POST', body: fd });
+            const data = await res.json();
+            if (data.error) {
+                alert(data.error);
+            } else {
+                alert(data.message);
+            }
+        } catch(err) {
+            alert("Save failed: " + err.message);
+        } finally {
+            btn.disabled = false;
+            btn.textContent = "Save API Credentials";
+        }
+    }
+
+    async function changePassword(e) {
+        e.preventDefault();
+        const newPwd = document.getElementById('newPassword').value;
+        const confirmNew = document.getElementById('confirmNewPassword').value;
+        const btn = document.getElementById('changePwdBtn');
+        
+        if (newPwd.length < 6) {
+            alert("Password must be at least 6 characters long.");
+            return;
+        }
+        if (newPwd !== confirmNew) {
+            alert("Passwords do not match.");
+            return;
+        }
+        
+        btn.disabled = true;
+        btn.textContent = "Updating Password...";
+        
+        const fd = new FormData();
+        fd.append('new_password', newPwd);
+        
+        try {
+            const res = await fetch('/settings/update-password', { method: 'POST', body: fd });
+            const data = await res.json();
+            if (data.error) {
+                alert(data.error);
+            } else {
+                alert(data.message);
+                document.getElementById('changePasswordForm').reset();
+            }
+        } catch(err) {
+            alert("Password update failed: " + err.message);
+        } finally {
+            btn.disabled = false;
+            btn.textContent = "Update Password";
+        }
+    }
+
+    function toggleAuthTab(tab) {
+        const loginForm = document.getElementById('loginForm');
+        const registerForm = document.getElementById('registerForm');
+        const toggleLogin = document.getElementById('authToggleLogin');
+        const toggleRegister = document.getElementById('authToggleRegister');
+        
+        if (tab === 'login') {
+            loginForm.classList.remove('hidden');
+            registerForm.classList.add('hidden');
+            toggleLogin.className = "flex-grow pb-3 text-sm font-semibold border-b-2 border-primary text-primary transition-colors cursor-pointer outline-none";
+            toggleRegister.className = "flex-grow pb-3 text-sm font-semibold border-b-2 border-transparent text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer outline-none";
+        } else {
+            loginForm.classList.add('hidden');
+            registerForm.classList.remove('hidden');
+            toggleLogin.className = "flex-grow pb-3 text-sm font-semibold border-b-2 border-transparent text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer outline-none";
+            toggleRegister.className = "flex-grow pb-3 text-sm font-semibold border-b-2 border-primary text-primary transition-colors cursor-pointer outline-none";
+        }
+    }
+
+    function toggleFaq(faqNum) {
+        const ans = document.getElementById(`faq-ans-${faqNum}`);
+        const icon = document.getElementById(`faq-icon-${faqNum}`);
+        if (ans) {
+            const isHidden = ans.classList.contains('hidden');
+            if (isHidden) {
+                ans.classList.remove('hidden');
+                if (icon) icon.textContent = 'expand_less';
+            } else {
+                ans.classList.add('hidden');
+                if (icon) icon.textContent = 'expand_more';
+            }
+        }
+    }
+
+    // ── Global Resume Upload ────────────────────────────────────────
+    async function uploadGlobalResume(file) {
+        if (!file) return;
+        setStatusBar("Parsing resume file...");
+        const fd = new FormData();
+        fd.append('file', file);
+
+        try {
+            const res = await fetch('/upload-resume', { method: 'POST', body: fd });
+            const data = await res.json();
+            
+            if (data.error) {
+                alert("Resume parsing failed: " + data.error);
+                clearGlobalResume();
+                return;
+            }
+
+            resumeText = data.text;
+            uploadedResumeName = file.name;
+            
+            // Update UI elements
+            document.getElementById('resumeUploadSection').classList.add('hidden');
+            document.getElementById('resumeInfoSection').classList.remove('hidden');
+            document.getElementById('globalResumeName').textContent = file.name;
+            
+            const dot = document.getElementById('resumeDot');
+            dot.className = 'w-2 h-2 rounded-full bg-primary glow-emerald';
+            
+            setStatusBar("Resume loaded successfully");
+            addNotification("Resume", "Parsed and loaded " + file.name);
+        } catch(e) {
+            alert("Upload request failed: " + e.message);
+            clearGlobalResume();
+        }
+    }
+
+    function clearGlobalResume() {
+        resumeText = '';
+        uploadedResumeName = '';
+        document.getElementById('sideResumeFile').value = '';
+        document.getElementById('resumeUploadSection').classList.remove('hidden');
+        document.getElementById('resumeInfoSection').classList.add('hidden');
+        
+        const dot = document.getElementById('resumeDot');
+        dot.className = 'w-2 h-2 rounded-full bg-red-500';
+        setStatusBar("System Connection Active");
+        addNotification("Resume", "Cleared global resume profile.");
+    }
+
+    // ── Tab Navigation controls ───────────────────────────────
+    function switchTab(tabId) {
+        // Toggle Sections
+        const tabs = ['ats-tab', 'chat-tab', 'intel-tab', 'campaigns-tab', 'settings-tab', 'support-tab'];
+        tabs.forEach(t => {
+            const el = document.getElementById(t);
+            if (el) {
+                if (t === tabId) {
+                    el.classList.remove('hidden');
+                } else {
+                    el.classList.add('hidden');
+                }
+            }
+        });
+
+        // Toggle nav button highlighting
+        const navBtns = ['ats-tab-btn', 'chat-tab-btn', 'intel-tab-btn', 'campaigns-tab-btn', 'settings-tab-btn', 'support-tab-btn'];
+        const activeBtnId = tabId.replace('-tab', '-tab-btn');
+        navBtns.forEach(b => {
+            const btn = document.getElementById(b);
+            if (!btn) return;
+            if (b === activeBtnId) {
+                btn.className = "w-full flex items-center gap-4 px-container-padding py-3 bg-primary-container/20 text-primary border-r-4 border-primary transition-all duration-200 ease-in-out text-left cursor-pointer outline-none";
+                // Ensure bold icons
+                const icon = btn.querySelector('.material-symbols-outlined');
+                if(icon) icon.style.fontVariationSettings = "'FILL' 1";
+            } else {
+                if (b === 'settings-tab-btn' || b === 'support-tab-btn') {
+                    btn.className = "w-full flex items-center gap-4 py-2 text-on-surface-variant hover:text-on-surface transition-colors bg-transparent border-0 text-left cursor-pointer outline-none";
+                } else {
+                    btn.className = "w-full flex items-center gap-4 px-container-padding py-3 text-on-surface-variant hover:bg-surface-variant/30 hover:text-on-surface transition-all duration-200 ease-in-out text-left cursor-pointer outline-none";
+                }
+                const icon = btn.querySelector('.material-symbols-outlined');
+                if(icon) icon.style.fontVariationSettings = "'FILL' 0";
+            }
+        });
+    }
+
+    // ── Tab 1: ATS Scorer ───────────────────────────────────────
+    async function runAtsScorer() {
+        if (!resumeText) {
+            alert("Please upload your resume in the sidebar first.");
+            return;
+        }
+        const jd = document.getElementById('atsJdText').value.trim();
+        if (!jd) {
+            alert("Please paste the job description to run the ATS scorer.");
+            return;
+        }
+
+        const btn = document.getElementById('atsScorerBtn');
+        btn.disabled = true;
+        btn.innerHTML = `<span class="w-4 h-4 border-2 border-on-primary border-t-transparent rounded-full animate-spin"></span> Evaluating...`;
+        setAgentActive("planner", "Analyzing match score...");
+
+        const fd = new FormData();
+        fd.append('resume', resumeText);
+        fd.append('jd', jd);
+
+        try {
+            const res = await fetch('/analyze-ats', { method: 'POST', body: fd });
+            const report = await res.json();
+
+            // Hide empty state, reveal data state
+            document.getElementById('atsEmptyState').classList.add('hidden');
+            const dataState = document.getElementById('atsDataState');
+            dataState.classList.remove('hidden');
+
+            // Render ATS circular gauge
+            const score = report.score || 0;
+            const circle = document.getElementById('atsCircleGauge');
+            const offset = 251.2 - (251.2 * score) / 100;
+            circle.style.strokeDashoffset = offset;
+            document.getElementById('atsScoreValue').textContent = `${score}%`;
+
+            // Adjust gauge color depending on score
+            if (score >= 75) {
+                circle.setAttribute('stroke', '#4edea3'); // Emerald
+            } else if (score >= 50) {
+                circle.setAttribute('stroke', '#ffd93d'); // Warning yellow
+            } else {
+                circle.setAttribute('stroke', '#ff6b6b'); // Danger red
+            }
+
+            // Render section scores
+            const sections = report.section_scores || {};
+            document.getElementById('score-exp').textContent = `${sections.experience || 50}%`;
+            document.getElementById('bar-exp').style.width = `${sections.experience || 50}%`;
+            
+            document.getElementById('score-skills').textContent = `${sections.skills || 50}%`;
+            document.getElementById('bar-skills').style.width = `${sections.skills || 50}%`;
+            
+            document.getElementById('score-format').textContent = `${sections.formatting || 50}%`;
+            document.getElementById('bar-format').style.width = `${sections.formatting || 50}%`;
+
+            // Render Audit Checklist
+            const checklist = document.getElementById('atsChecklistContainer');
+            checklist.innerHTML = '';
+            
+            const checks = [
+                { name: "Professional Experience Audit", passed: ((sections.experience || 50) >= 70), desc: "Evaluates impact statements and action verbs." },
+                { name: "Technical Skill Mapping", passed: ((sections.skills || 50) >= 70), desc: "Checks technical keywords overlap." },
+                { name: "Formatting & Layout Check", passed: ((sections.formatting || 50) >= 75), desc: "Grades structure, section titles, and flow." },
+                { name: "Education & Credentials Profile", passed: ((sections.education || 50) >= 50), desc: "Validates academic backgrounds." }
+            ];
+            
+            checks.forEach(c => {
+                const item = document.createElement('div');
+                item.className = "flex items-start gap-3 p-3 bg-surface-container-low rounded border border-white/5";
+                
+                const icon = c.passed ? 'check_circle' : 'warning';
+                const iconCls = c.passed ? 'text-primary glow-emerald' : 'text-error';
+                const statusText = c.passed ? 'Passed' : 'Action Required';
+                const statusCls = c.passed ? 'text-primary' : 'text-error';
+                
+                item.innerHTML = `
+                    <span class="material-symbols-outlined ${iconCls} text-lg mt-0.5">${icon}</span>
+                    <div>
+                        <div class="font-bold text-on-surface flex items-center gap-2 text-xs">
+                            ${c.name}
+                            <span class="text-[8px] font-label-technical uppercase px-1.5 py-0.5 rounded bg-white/5 ${statusCls}">${statusText}</span>
+                        </div>
+                        <p class="text-[10px] text-on-surface-variant mt-1 leading-normal">${c.desc}</p>
+                    </div>
+                `;
+                checklist.appendChild(item);
+            });
+
+            // Render matched keywords chips
+            const matchedContainer = document.getElementById('atsMatchedKeywords');
+            matchedContainer.innerHTML = '';
+            (report.matched_keywords || []).forEach(k => {
+                const chip = document.createElement('span');
+                chip.className = "px-2.5 py-1 bg-primary/10 text-primary text-[10px] font-data-mono rounded border border-primary/20";
+                chip.textContent = k;
+                matchedContainer.appendChild(chip);
+            });
+            if((report.matched_keywords || []).length === 0) matchedContainer.innerHTML = '<span class="text-[10px] text-on-surface-variant italic">No matches detected.</span>';
+
+            // Render missing keywords chips
+            const missingContainer = document.getElementById('atsMissingKeywords');
+            missingContainer.innerHTML = '';
+            (report.missing_keywords || []).forEach(k => {
+                const chip = document.createElement('span');
+                chip.className = "px-2.5 py-1 bg-error/10 text-error text-[10px] font-data-mono rounded border border-error/20";
+                chip.textContent = k;
+                missingContainer.appendChild(chip);
+            });
+            if((report.missing_keywords || []).length === 0) missingContainer.innerHTML = '<span class="text-[10px] text-on-surface-variant italic">No missing keywords! Perfect match.</span>';
+
+            // Render recommendations
+            const suggestionsList = document.getElementById('atsSuggestionsList');
+            suggestionsList.innerHTML = '';
+            (report.suggestions || []).forEach(s => {
+                const li = document.createElement('li');
+                li.className = "border-l-2 border-secondary/30 pl-3 py-1";
+                li.innerHTML = `<p class="text-xs text-on-surface">${s}</p>`;
+                suggestionsList.appendChild(li);
+            });
+
+            // Render tailored resume preview
+            document.getElementById('atsTailoredResumeText').textContent = report.tailored_resume || resumeText;
+
+            setAgentIdle("planner");
+            addNotification("ATS Scorer", "Scored resume at " + score + "% compatibility fit.");
+        } catch(e) {
+            alert("ATS analysis failed: " + e.message);
+            setAgentIdle("planner");
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = `<span class="material-symbols-outlined text-lg">settings_suggest</span> Run ATS Analysis`;
+        }
+    }
+
+    // ── Tab 2: Career AI Coach Chatbot ─────────────────────────
+    async function sendChatMessage() {
+        const input = document.getElementById('fullChatInput');
+        const text = input.value.trim();
+        if (!text) return;
+
+        // Render user message immediately
+        appendChatMessage("user", text);
+        input.value = '';
+
+        // Call backend API
+        const jd = document.getElementById('atsJdText').value.trim();
+        const fd = new FormData();
+        fd.append('message', text);
+        fd.append('history', JSON.stringify(chatHistory));
+        fd.append('resume', resumeText);
+        fd.append('jd', jd);
+
+        setAgentActive("critic", "Coach is reasoning...");
+
+        try {
+            const res = await fetch('/chat', { method: 'POST', body: fd });
+            const data = await res.json();
+            
+            // Append assistant reply
+            appendChatMessage("assistant", data.reply);
+            
+            // Update chat history local log
+            chatHistory.push({"role": "user", "content": text});
+            chatHistory.push({"role": "assistant", "content": data.reply});
+            
+            setAgentIdle("critic");
+        } catch(e) {
+            appendChatMessage("assistant", "I had trouble connecting. Error: " + e.message);
+            setAgentIdle("critic");
+        }
+    }
+
+    function appendChatMessage(role, text) {
+        const container = document.getElementById('fullChatMessages');
+        const msgDiv = document.createElement('div');
+        msgDiv.className = "flex items-start gap-3 " + (role === 'user' ? 'justify-end' : '');
+        
+        const avatar = role === 'user' ? '👤' : '🤖';
+        const bgCls = role === 'user' ? 'bg-primary-container/20 border border-primary/20 text-on-surface' : 'bg-surface-variant/40 border border-white/5 text-on-surface-variant';
+        
+        msgDiv.innerHTML = `
+            ${role !== 'user' ? `<div class="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary text-sm flex-shrink-0">${avatar}</div>` : ''}
+            <div class="${bgCls} rounded-lg p-4 text-xs leading-relaxed max-w-[85%] whitespace-pre-wrap">${text}</div>
+            ${role === 'user' ? `<div class="w-8 h-8 rounded-full bg-secondary-container/20 flex items-center justify-center text-secondary text-sm flex-shrink-0">${avatar}</div>` : ''}
+        `;
+        container.appendChild(msgDiv);
+        container.scrollTop = container.scrollHeight;
+    }
+
+    function sendQuickPrompt(promptText) {
+        document.getElementById('fullChatInput').value = promptText;
+        sendChatMessage();
+    }
+
+    function clearChatHistory() {
+        chatHistory = [];
+        const container = document.getElementById('fullChatMessages');
+        container.innerHTML = `
+            <div class="flex items-start gap-3">
+                <div class="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary text-sm flex-shrink-0">🤖</div>
+                <div class="bg-surface-variant/40 border border-white/5 rounded-lg p-4 text-xs text-on-surface leading-relaxed max-w-[85%]">
+                    Conversation reset! How can I help you today?
+                </div>
+            </div>
+        `;
+    }
+
+    // ── Tab 3: Company Intelligence ───────────────────────────
+    async function searchCompanyIntelligence() {
+        const companyName = document.getElementById('companySearchInput').value.trim();
+        if (!companyName) {
+            alert("Please enter a company name.");
+            return;
+        }
+
+        const btn = document.getElementById('companySearchBtn');
+        const loader = document.getElementById('companyLoader');
+        const content = document.getElementById('companyContentArea');
+
+        btn.disabled = true;
+        loader.classList.remove('hidden');
+        content.classList.add('hidden');
+        setAgentActive("company", `Searching wiki and crunching stats for ${companyName}...`);
+
+        const fd = new FormData();
+        fd.append('company_name', companyName);
+        fd.append('resume', resumeText);
+
+        try {
+            const res = await fetch('/company-research', { method: 'POST', body: fd });
+            const info = await res.json();
+
+            // Populate layout elements
+            document.getElementById('comp-name').textContent = info.name || companyName;
+            document.getElementById('comp-tagline').textContent = info.tagline || 'Technology Company';
+            document.getElementById('comp-score').textContent = `${info.match_score || 80}%`;
+            document.getElementById('comp-size').textContent = info.employees || 'Unknown size';
+            document.getElementById('comp-revenue').textContent = info.revenue || 'Private';
+            document.getElementById('comp-stage').textContent = `Stage: ${info.stage || 'Established'}`;
+            document.getElementById('comp-mission').textContent = `"${info.mission || 'To innovate and build robust products.'}"`;
+            document.getElementById('comp-hq').textContent = info.hq || 'Global';
+            document.getElementById('comp-branches').innerHTML = `<span class="text-on-surface-variant font-label-technical">Locations:</span> ${info.branches || 'Remote'}`;
+            document.getElementById('comp-vibe').textContent = `"${info.culture_vibe || 'High performance and collaborative.'}"`;
+            document.getElementById('comp-funding').textContent = info.recent_funding || 'Revenue generating.';
+            document.getElementById('comp-pitch').textContent = info.pitch_tactic || 'I can immediately apply my core engineering skills.';
+
+            // Render logo initial
+            document.getElementById('companyLogoInitial').textContent = (info.name || companyName)[0].toUpperCase();
+
+            // Render culture tags
+            const tagsBox = document.getElementById('comp-tags');
+            tagsBox.innerHTML = '';
+            (info.culture_tags || []).forEach(t => {
+                const tag = document.createElement('span');
+                tag.className = "px-2 py-1 bg-surface-variant rounded text-on-surface font-label-technical text-[10px]";
+                tag.textContent = t;
+                tagsBox.appendChild(tag);
+            });
+
+            // Render tech stack tags
+            const techBox = document.getElementById('comp-techstack');
+            techBox.innerHTML = '';
+            const stack = info.tech_stack || {};
+            (stack.matching || []).forEach(t => {
+                const tag = document.createElement('span');
+                tag.className = "px-3 py-1 bg-primary/10 text-primary font-data-mono text-data-mono rounded border border-primary/20";
+                tag.textContent = t;
+                techBox.appendChild(tag);
+            });
+            (stack.missing || []).forEach(t => {
+                const tag = document.createElement('span');
+                tag.className = "px-3 py-1 bg-error/10 text-error font-data-mono text-data-mono rounded border border-error/20";
+                tag.textContent = `${t} (Missing)`;
+                techBox.appendChild(tag);
+            });
+
+            // Render Cheat Sheet
+            const cheatBox = document.getElementById('comp-cheatsheet');
+            cheatBox.innerHTML = '';
+            (info.cheat_sheet || []).forEach(item => {
+                const li = document.createElement('li');
+                li.className = "border-l-2 border-secondary/30 pl-3";
+                li.innerHTML = `
+                    <div class="font-data-mono text-data-mono text-on-surface-variant mb-1">Focus Area: ${item.area}</div>
+                    <p class="font-body-md text-on-surface text-sm">"${item.question}"</p>
+                `;
+                cheatBox.appendChild(li);
+            });
+
+            // Render competitor tags
+            const compBox = document.getElementById('comp-competitors');
+            compBox.innerHTML = '';
+            (info.competitors || []).forEach(c => {
+                const tag = document.createElement('span');
+                tag.className = "px-2 py-0.5 bg-surface-variant rounded text-[10px] text-on-surface";
+                tag.textContent = c;
+                compBox.appendChild(tag);
+            });
+
+            content.classList.remove('hidden');
+            setAgentIdle("company");
+            addNotification("Company Intel", "Researched " + (info.name || companyName) + " (Fit: " + (info.match_score || 80) + "%).");
+        } catch(e) {
+            alert("Company research failed: " + e.message);
+            setAgentIdle("company");
+        } finally {
+            btn.disabled = false;
+            loader.classList.add('hidden');
+        }
+    }
+
+    // ── Tab 4: Campaigns ───────────────────────────────────────
+    async function loadCampaigns() {
+        try {
+            const res = await fetch('/applications');
+            const data = await res.json();
+            activeCampaigns = data;
+            
+            const tbody = document.getElementById('campaignsTableBody');
+            tbody.innerHTML = '';
+
+            if (data.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="py-8 text-center text-on-surface-variant italic text-xs">
+                            No campaigns active. Upload a resume and type a query above to launch a campaign!
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            data.forEach((item, index) => {
+                const row = document.createElement('tr');
+                row.className = "hover:bg-surface-variant/20 transition-colors group";
+                
+                const score = item.fit_score || 50;
+                let scoreBorder = "border-primary text-primary";
+                if (score < 50) scoreBorder = "border-error/50 text-error/80";
+                else if (score < 75) scoreBorder = "border-primary/60 text-primary/80";
+
+                row.innerHTML = `
+                    <td class="py-4 px-4">
+                        <div class="font-semibold text-on-surface">${item.title}</div>
+                        <div class="text-on-surface-variant text-xs mt-1">${item.company}</div>
+                    </td>
+                    <td class="py-4 px-4">
+                        <div class="inline-flex items-center justify-center w-10 h-10 rounded-full border-2 ${scoreBorder} font-label-technical font-bold">
+                            ${score}
+                        </div>
+                    </td>
+                    <td class="py-4 px-4">
+                        <span class="px-2.5 py-1 rounded-full bg-secondary/10 text-secondary border border-secondary/20 font-data-mono text-[10px] uppercase tracking-wider">
+                            ${item.status || 'Drafted'}
+                        </span>
+                    </td>
+                    <td class="py-4 px-4">
+                        <div class="flex gap-2">
+                            ${item.cover_letter ? `
+                                <button onclick="viewAsset('${item.id}', 'cover_letter')" class="p-1.5 rounded bg-surface-container hover:bg-surface-variant text-on-surface border border-white/10 transition-colors cursor-pointer outline-none" title="Cover Letter">
+                                    <span class="material-symbols-outlined text-[18px]">description</span>
+                                </button>
+                            ` : ''}
+                            ${item.recruiter_email && (item.recruiter_email.body || item.recruiter_email.subject) ? `
+                                <button onclick="viewAsset('${item.id}', 'recruiter_email')" class="p-1.5 rounded bg-surface-container hover:bg-surface-variant text-on-surface border border-white/10 transition-colors cursor-pointer outline-none" title="Recruiter Email">
+                                    <span class="material-symbols-outlined text-[18px]">mail</span>
+                                </button>
+                            ` : ''}
+                            ${item.linkedin_note ? `
+                                <button onclick="viewAsset('${item.id}', 'linkedin_note')" class="p-1.5 rounded bg-surface-container hover:bg-surface-variant text-on-surface border border-white/10 transition-colors cursor-pointer outline-none" title="LinkedIn Connection Note">
+                                    <span class="material-symbols-outlined text-[18px]">chat</span>
+                                </button>
+                            ` : ''}
+                        </div>
+                    </td>
+                    <td class="py-4 px-4 text-right">
+                        <div class="flex items-center justify-end gap-2.5">
+                            ${item.url ? `
+                                <a href="${item.url}" target="_blank" class="inline-flex items-center gap-1 bg-primary/20 hover:bg-primary text-primary hover:text-on-primary font-bold text-[10px] py-1.5 px-3 rounded transition-all cursor-pointer font-label-technical">
+                                    <span class="material-symbols-outlined text-xs">open_in_new</span> Apply Link
+                                </a>
+                            ` : ''}
+                            <button onclick="deleteCampaign('${item.id}')" class="text-error hover:bg-error-container/20 rounded p-1.5 transition-colors cursor-pointer outline-none">
+                                <span class="material-symbols-outlined text-[18px]">delete</span>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        } catch(e) {
+            console.error("Failed to load campaigns:", e);
+        }
+    }
+
+    async function runCampaignAgent() {
+        if (!resumeText) {
+            alert("Please upload your resume in the sidebar first.");
+            return;
+        }
+        const query = document.getElementById('campaignQueryInput').value.trim();
+        if (!query) {
+            alert("Please enter a job search query.");
+            return;
+        }
+
+        const btn = document.getElementById('runCampaignBtn');
+        btn.disabled = true;
+        btn.textContent = "Running Agent...";
+
+        // Set status
+        setStatusBar("Orchestrating agent campaign...");
+        resetPipelineStages();
+
+        const fd = new FormData();
+        fd.append('query', query);
+        fd.append('resume', resumeText);
+
+        try {
+            const res = await fetch('/run-agent', { method: 'POST', body: fd });
+            const reader = res.body.getReader();
+            const decoder = new TextDecoder();
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                
+                const lines = decoder.decode(value).split('\n').filter(l => l.startsWith('data: '));
+                for (const line of lines) {
+                    try {
+                        const { event, data } = JSON.parse(line.slice(6));
+                        handlePipelineEvent(event, data);
+                    } catch(err) {
+                        console.error("SSE parse error", err);
+                    }
+                }
+            }
+        } catch(e) {
+            alert("Campaign runtime failed: " + e.message);
+        } finally {
+            btn.disabled = false;
+            btn.textContent = "Launch Campaign";
+            setStatusBar("System Connection Active");
+            loadCampaigns(); // refresh list
+        }
+    }
+
+    function handlePipelineEvent(event, data) {
+        if (event === 'stage') {
+            const stage = data.stage; // scraper, planner, critic, writer, tracker
+            setAgentActive(stage, data.message);
+        }
+        if (event === 'scraper_done') {
+            setAgentDone('scraper', `Scraped ${data.count} roles.`);
+        }
+        if (event === 'planner_done') {
+            setAgentDone('planner', `Scored matches.`);
+        }
+        if (event === 'critic_done') {
+            setAgentDone('critic', data.current_job ? `Selected ${data.current_job}` : `No jobs met score threshold.`);
+        }
+        if (event === 'writer_done') {
+            setAgentDone('writer', `Tailored assets written.`);
+        }
+        if (event === 'done') {
+            setAgentDone('tracker', data.message);
+            setStatusBar("Campaign Finished");
+            addNotification("Campaign", "Outreach assets written & campaign logged.");
+        }
+    }
+
+    async function deleteCampaign(id) {
+        if(!confirm("Are you sure you want to delete this campaign?")) return;
+        try {
+            await fetch(`/applications/${id}`, { method: 'DELETE' });
+            loadCampaigns();
+        } catch(e) {
+            alert("Failed to delete: " + e.message);
+        }
+    }
+
+    // ── Asset Viewer Modal controls ───────────────────────────
+    function viewAsset(jobId, assetType) {
+        const item = activeCampaigns.find(c => c.id === jobId);
+        if (!item) return;
+
+        const modal = document.getElementById('assetModal');
+        const titleEl = document.getElementById('assetModalTitle');
+        const contentEl = document.getElementById('assetModalContent');
+        const copyBtn = document.getElementById('modalCopyBtn');
+
+        let text = '';
+        if (assetType === 'cover_letter') {
+            titleEl.textContent = `Cover Letter - ${item.company}`;
+            text = item.cover_letter || '';
+        } else if (assetType === 'recruiter_email') {
+            titleEl.textContent = `Recruiter Cold Outreach Email`;
+            const email = item.recruiter_email || {};
+            text = `Subject: ${email.subject || ''}\n\n${email.body || ''}`;
+        } else if (assetType === 'linkedin_note') {
+            titleEl.textContent = `LinkedIn Connection Request Note`;
+            text = item.linkedin_note || '';
+        }
+
+        contentEl.textContent = text;
+        copyBtn.onclick = () => copyToClipboardRaw(text, copyBtn);
+        modal.classList.remove('hidden');
+    }
+
+    function closeAssetModal() {
+        document.getElementById('assetModal').classList.add('hidden');
+    }
+
+    // ── Helper Utilities ───────────────────────────────────────
+    function setStatusBar(text) {
+        document.getElementById('statusBarText').textContent = text;
+    }
+
+    function copyToClipboard(elementId, btn) {
+        const text = document.getElementById(elementId).textContent;
+        copyToClipboardRaw(text, btn);
+    }
+
+    function copyToClipboardRaw(text, btn) {
+        navigator.clipboard.writeText(text).then(() => {
+            const originalText = btn.innerHTML;
+            btn.innerHTML = `<span class="material-symbols-outlined text-[16px]">check</span> Copied!`;
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+            }, 2000);
+        }).catch(err => {
+            alert("Failed to copy: " + err);
+        });
+    }
+
+    // Pipeline monitoring UI styling helpers
+    function setAgentActive(agent, message) {
+        const dot = document.getElementById(`dot-${agent}`);
+        const msg = document.getElementById(`msg-${agent}`);
+        if(dot) {
+            dot.className = 'w-2 h-2 rounded-full bg-primary glow-emerald animate-ping';
+        }
+        if(msg) {
+            msg.textContent = message;
+            msg.className = "text-[10px] text-primary";
+        }
+    }
+
+    function setAgentDone(agent, message) {
+        const dot = document.getElementById(`dot-${agent}`);
+        const msg = document.getElementById(`msg-${agent}`);
+        if(dot) {
+            dot.className = 'w-2 h-2 rounded-full bg-primary glow-emerald';
+        }
+        if(msg) {
+            msg.textContent = message;
+            msg.className = "text-[10px] text-on-surface-variant";
+        }
+    }
+
+    function setAgentIdle(agent) {
+        const dot = document.getElementById(`dot-${agent}`);
+        const msg = document.getElementById(`msg-${agent}`);
+        if(dot) {
+            dot.className = 'w-2 h-2 rounded-full bg-surface-variant';
+        }
+        if(msg) {
+            msg.textContent = "Idle";
+            msg.className = "text-[10px] text-on-surface-variant";
+        }
+    }
+
+    function resetPipelineStages() {
+        const agents = ['scraper', 'planner', 'critic', 'writer', 'tracker'];
+        agents.forEach(setAgentIdle);
+    }
+</script>
+</body>
+</html>

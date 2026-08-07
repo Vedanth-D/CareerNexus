@@ -1,0 +1,5 @@
+how to run job agent project 
+
+python -m venv venv
+venv\Scripts\activate
+uvicorn server:app --reload
