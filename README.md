@@ -19,6 +19,8 @@ A full-stack Agentic AI system for automated job searching, resume tailoring, AT
 
 ### 🖥️ Live Dashboard & Multi-Agent Workspace
 
+https://career-nexus-sigma.vercel.app/  (live)
+
 ![Job Agent Workspace Dashboard](debug_screenshot.png)
 
 ---
@@ -187,7 +189,7 @@ Start the FastAPI development server using Uvicorn:
 python -X utf8 -m uvicorn server:app --host 127.0.0.1 --port 8000 --reload
 ```
 
-Open your browser and navigate to: **[http://localhost:8000](http://localhost:8000)**
+Open your browser and navigate to: **https://career-nexus-sigma.vercel.app/**
 
 ---
 
