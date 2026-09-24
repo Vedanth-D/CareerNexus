@@ -122,10 +122,15 @@
 <body class="bg-[#111317] text-on-background font-body-md min-h-screen overflow-x-hidden selection:bg-primary-container/30 selection:text-primary">
 <div id="dashboardApp" class="hidden">
 <!-- TopAppBar -->
-<header class="fixed top-0 w-full z-50 bg-background/60 backdrop-blur-xl border-b border-white/10 shadow-sm flex justify-between items-center h-16 px-gutter">
-    <div class="font-headline-md text-headline-md font-bold text-primary cursor-pointer active:scale-95 transition-transform flex items-center gap-2">
-        <span class="material-symbols-outlined text-primary text-3xl">psychology</span>
-        <span>CareerNexus</span>
+<header class="fixed top-0 w-full z-50 bg-background/60 backdrop-blur-xl border-b border-white/10 shadow-sm flex justify-between items-center h-16 px-4 md:px-gutter">
+    <div class="flex items-center gap-3">
+        <button onclick="toggleMobileSidebar()" class="md:hidden text-on-surface hover:text-primary transition-colors p-1.5 rounded-lg border border-white/10 flex items-center justify-center outline-none bg-surface-container/60">
+            <span class="material-symbols-outlined text-2xl">menu</span>
+        </button>
+        <div class="font-headline-md text-headline-md font-bold text-primary cursor-pointer active:scale-95 transition-transform flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary text-3xl">psychology</span>
+            <span>CareerNexus</span>
+        </div>
     </div>
     <div class="flex items-center gap-gutter relative">
         <span onclick="toggleNotificationsDropdown()" class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors cursor-pointer" data-icon="notifications">notifications</span>
@@ -146,7 +151,42 @@
             </div>
         </div>
 
-        <span onclick="switchTab('settings-tab')" class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors cursor-pointer" data-icon="account_circle">account_circle</span>
+        <div class="relative">
+            <button onclick="toggleProfileDropdown(event)" class="flex items-center justify-center w-9 h-9 rounded-full bg-surface-container-high border border-white/10 hover:border-primary/40 text-on-surface-variant hover:text-primary transition-all cursor-pointer outline-none">
+                <span class="material-symbols-outlined text-xl" data-icon="account_circle">account_circle</span>
+            </button>
+
+            <!-- User Profile Dropdown Popup -->
+            <div id="userProfileDropdown" class="absolute right-0 mt-3 w-72 bg-surface-container/95 backdrop-blur-xl rounded-xl border border-primary/20 shadow-2xl p-4 hidden z-50 flex flex-col gap-3">
+                <div class="flex items-center gap-3 border-b border-white/10 pb-3">
+                    <div class="w-10 h-10 rounded-full bg-primary/20 border border-primary/40 flex items-center justify-center text-primary font-bold text-lg">
+                        <span class="material-symbols-outlined text-xl">person</span>
+                    </div>
+                    <div class="overflow-hidden text-left">
+                        <div id="dropdownUserEmail" class="text-xs font-bold text-on-surface truncate">user@example.com</div>
+                        <div class="text-[10px] text-primary font-label-technical font-bold uppercase tracking-wider flex items-center gap-1 mt-0.5">
+                            <span class="w-1.5 h-1.5 rounded-full bg-primary glow-emerald"></span> Verified Account
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-2 text-xs text-left">
+                    <div class="p-2.5 bg-surface-container-low rounded-lg border border-white/5 flex items-center justify-between">
+                        <span class="text-on-surface-variant text-[11px]">Active Resume</span>
+                        <span id="dropdownResumeBadge" class="font-bold text-primary text-[11px] truncate max-w-[120px]">None Loaded</span>
+                    </div>
+                </div>
+
+                <div class="flex flex-col gap-1 pt-1 border-t border-white/10 text-xs">
+                    <button onclick="switchTab('settings-tab'); toggleProfileDropdown();" class="flex items-center gap-2 px-3 py-2 text-on-surface-variant hover:text-on-surface hover:bg-white/5 rounded transition-colors text-left cursor-pointer border-0 bg-transparent">
+                        <span class="material-symbols-outlined text-sm">settings</span> Account Settings
+                    </button>
+                    <button onclick="handleLogout()" class="flex items-center gap-2 px-3 py-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded transition-colors text-left cursor-pointer border-0 bg-transparent">
+                        <span class="material-symbols-outlined text-sm">logout</span> Sign Out
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 </header>
 
@@ -193,6 +233,18 @@
             </button>
         </li>
         <li>
+            <button onclick="switchTab('interview-tab')" id="interview-tab-btn" class="w-full flex items-center gap-4 px-container-padding py-3 text-on-surface-variant hover:bg-surface-variant/30 hover:text-on-surface transition-all duration-200 ease-in-out">
+                <span class="material-symbols-outlined">mic</span>
+                <span class="font-body-md text-body-md">Voice Interview</span>
+            </button>
+        </li>
+        <li>
+            <button onclick="switchTab('heatmap-tab')" id="heatmap-tab-btn" class="w-full flex items-center gap-4 px-container-padding py-3 text-on-surface-variant hover:bg-surface-variant/30 hover:text-on-surface transition-all duration-200 ease-in-out">
+                <span class="material-symbols-outlined">grid_view</span>
+                <span class="font-body-md text-body-md">Skill Gap Heatmap</span>
+            </button>
+        </li>
+        <li>
             <button onclick="switchTab('intel-tab')" id="intel-tab-btn" class="w-full flex items-center gap-4 px-container-padding py-3 text-on-surface-variant hover:bg-surface-variant/30 hover:text-on-surface transition-all duration-200 ease-in-out">
                 <span class="material-symbols-outlined">domain</span>
                 <span class="font-body-md text-body-md">Company Intel</span>
@@ -224,6 +276,9 @@
         </ul>
     </div>
 </nav>
+
+<!-- Mobile Sidebar Backdrop Overlay -->
+<div id="sidebarBackdrop" onclick="toggleMobileSidebar()" class="fixed inset-0 bg-black/60 z-30 hidden md:hidden backdrop-blur-sm"></div>
 
 <!-- Main Content -->
 <main class="md:ml-64 pt-20 px-4 md:px-container-padding pb-20 min-h-screen">
@@ -288,6 +343,31 @@
                         <button onclick="runAtsScorer()" id="atsScorerBtn" class="w-full bg-primary hover:bg-primary-fixed text-on-primary font-bold py-3 rounded transition-all flex items-center justify-center gap-2">
                             <span class="material-symbols-outlined text-lg">settings_suggest</span> Run ATS Analysis
                         </button>
+                    </div>
+
+                    <!-- Free Instant AI Resume Bullet Rewriter Card -->
+                    <div class="glass-panel rounded-lg p-5 border border-white/5 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-xs font-bold uppercase tracking-wider text-on-surface font-label-technical flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-primary text-base">auto_fix_high</span> Free Instant AI Bullet Point Rewriter
+                            </h3>
+                            <span class="text-[9px] bg-primary/20 text-primary border border-primary/40 font-bold px-2 py-0.5 rounded font-label-technical">Paid Feature ➔ FREE</span>
+                        </div>
+                        <p class="text-[11px] text-on-surface-variant leading-relaxed">Paste any weak bullet point to transform it into 3 high-impact, quantified executive rewrites.</p>
+                        <div class="flex gap-2">
+                            <input id="bulletRewriterInput" type="text" class="w-full bg-surface-container-high border border-white/10 rounded px-3 py-2 text-xs text-on-surface outline-none focus:border-primary placeholder:text-on-surface-variant/40" placeholder="e.g. Responsible for managing team and server speeds..." />
+                            <select id="bulletToneSelect" class="bg-surface-container-high border border-white/10 rounded px-2 py-2 text-[11px] text-on-surface outline-none">
+                                <option value="Executive">Executive</option>
+                                <option value="Metric-Driven">Metric-Driven</option>
+                                <option value="Technical">Technical</option>
+                            </select>
+                            <button onclick="rewriteResumeBullet()" id="rewriteBulletBtn" class="bg-secondary hover:bg-secondary-fixed text-background font-bold text-xs px-4 py-2 rounded transition-colors flex-shrink-0">
+                                Rewrite
+                            </button>
+                        </div>
+                        <div id="bulletRewriteResults" class="hidden space-y-2 pt-2 border-t border-white/5 text-xs text-on-surface">
+                            <!-- Bullet rewrite suggestions rendered here -->
+                        </div>
                     </div>
                 </div>
 
@@ -669,7 +749,233 @@
             </div>
         </section>
 
-        <!-- ==================== TAB 5: SETTINGS ==================== -->
+        <!-- ==================== TAB 5: VOICE MOCK INTERVIEW ==================== -->
+        <section id="interview-tab" class="space-y-stack-md hidden">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-6 gap-4">
+                <div>
+                    <h2 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface flex items-center gap-3">
+                        <span class="material-symbols-outlined text-primary text-3xl">mic</span>
+                        Voice AI Mock Interview Simulator
+                    </h2>
+                    <p class="font-body-md text-on-surface-variant mt-1">Conduct real-time voice interviews with Llama-3.3. Listen to questions via AI speech synthesis and record spoken STAR responses.</p>
+                </div>
+            </div>
+
+            <!-- Role & Question Config Controls -->
+            <div class="glass-panel p-6 rounded-xl border border-white/5 grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                <div>
+                    <label class="text-[10px] uppercase font-bold text-on-surface-variant font-label-technical mb-1 block">Target Role</label>
+                    <select id="interviewRoleSelect" class="w-full bg-surface-container-high border border-white/10 rounded px-4 py-2.5 text-xs text-on-surface outline-none focus:border-primary">
+                        <option value="Full Stack Developer">Full Stack Developer</option>
+                        <option value="Backend Python Engineer">Backend Python Engineer</option>
+                        <option value="AI / ML Engineer">AI / ML Engineer</option>
+                        <option value="Product Manager">Product Manager</option>
+                        <option value="Cybersecurity Specialist">Cybersecurity Specialist</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="text-[10px] uppercase font-bold text-on-surface-variant font-label-technical mb-1 block">Question Category</label>
+                    <select id="interviewTypeSelect" class="w-full bg-surface-container-high border border-white/10 rounded px-4 py-2.5 text-xs text-on-surface outline-none focus:border-primary">
+                        <option value="technical">Technical System Design</option>
+                        <option value="behavioral">Behavioral STAR Format</option>
+                        <option value="leadership">Leadership & Conflict Resolution</option>
+                    </select>
+                </div>
+
+                <button onclick="generateVoiceQuestion()" id="genVoiceQBtn" class="bg-primary hover:bg-primary-fixed text-on-primary font-bold py-2.5 px-6 rounded text-xs transition-all flex items-center justify-center gap-2">
+                    <span class="material-symbols-outlined text-base">psychology</span> Generate Question
+                </button>
+            </div>
+
+            <!-- Interview Stage Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <!-- Question & Speech Input Panel -->
+                <div class="lg:col-span-7 flex flex-col gap-6">
+                    <!-- Current Question Card -->
+                    <div class="glass-panel p-6 rounded-xl border border-primary/30 space-y-4">
+                        <div class="flex items-center justify-between">
+                            <span id="interviewCatBadge" class="text-[10px] font-bold uppercase tracking-wider bg-primary/20 text-primary border border-primary/40 px-3 py-1 rounded-full font-label-technical">Technical System Design</span>
+                            <button onclick="speakQuestionText()" class="text-xs text-primary hover:text-on-surface flex items-center gap-1 font-bold bg-white/5 px-3 py-1.5 rounded-lg border border-white/10 hover:border-primary/40 transition-colors">
+                                <span class="material-symbols-outlined text-sm">volume_up</span> Listen (AI Voice)
+                            </button>
+                        </div>
+
+                        <h3 id="interviewQuestionText" class="text-base font-bold text-on-surface leading-snug">
+                            "Click 'Generate Question' above to start your interactive voice interview practice session."
+                        </h3>
+
+                        <div id="interviewHintBox" class="p-3 bg-surface-container-low rounded-lg border border-white/5 text-xs text-on-surface-variant leading-relaxed">
+                            <span class="text-primary font-bold">Hint:</span> <span id="interviewHintText">Structured your answer using the STAR method: Situation, Task, Action, Result.</span>
+                        </div>
+                    </div>
+
+                    <!-- Speech Recorder & Live Transcript Card -->
+                    <div class="glass-panel p-6 rounded-xl border border-white/5 space-y-4">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <div id="micPulseDot" class="w-3 h-3 rounded-full bg-surface-variant"></div>
+                                <span id="micStatusText" class="text-xs font-bold text-on-surface-variant">Microphone Ready</span>
+                            </div>
+
+                            <button onclick="toggleSpeechRecording()" id="micToggleBtn" class="bg-secondary hover:bg-secondary-fixed text-background font-bold text-xs px-4 py-2 rounded-lg transition-colors flex items-center gap-2">
+                                <span class="material-symbols-outlined text-sm">mic</span> Start Recording Spoken Answer
+                            </button>
+                        </div>
+
+                        <div>
+                            <label class="text-[10px] uppercase font-bold text-on-surface-variant font-label-technical mb-1 block">Spoken Answer Live Transcript</label>
+                            <textarea id="spokenAnswerTranscript" rows="4" class="w-full bg-surface-container-high border border-white/10 rounded-lg p-3 text-xs text-on-surface outline-none focus:border-primary placeholder:text-on-surface-variant/40" placeholder="Your spoken response will transcribe live here, or you can type directly..."></textarea>
+                        </div>
+
+                        <button onclick="submitVoiceAnswer()" id="submitVoiceAnswerBtn" class="w-full bg-primary hover:bg-primary-fixed text-on-primary font-bold py-3 rounded-lg text-xs transition-colors flex items-center justify-center gap-2">
+                            <span class="material-symbols-outlined text-sm">verified</span> Evaluate My Spoken Answer
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Feedback & Model Answer Panel -->
+                <div class="lg:col-span-5 flex flex-col gap-6">
+                    <div class="glass-panel p-6 rounded-xl border border-white/5 space-y-4">
+                        <h3 class="text-sm font-bold text-on-surface uppercase tracking-wider font-label-technical flex justify-between items-center">
+                            <span>STAR Evaluation Results</span>
+                            <span id="starScoreGauge" class="text-lg font-extrabold text-primary font-mono">0%</span>
+                        </h3>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="bg-surface-container-low p-3 rounded-lg border border-white/5">
+                                <div class="text-[10px] text-on-surface-variant font-label-technical uppercase">Confidence Rating</div>
+                                <div id="confidenceRatingBadge" class="text-xs font-bold text-primary mt-1">N/A</div>
+                            </div>
+                            <div class="bg-surface-container-low p-3 rounded-lg border border-white/5">
+                                <div class="text-[10px] text-on-surface-variant font-label-technical uppercase">Tone Analysis</div>
+                                <div id="toneAnalysisText" class="text-[11px] text-on-surface mt-1 truncate">Pending submission</div>
+                            </div>
+                        </div>
+
+                        <div class="space-y-2">
+                            <div class="text-xs font-bold text-primary font-label-technical flex items-center gap-1">
+                                <span class="material-symbols-outlined text-sm">check_circle</span> Key Strengths
+                            </div>
+                            <ul id="interviewStrengthsList" class="text-xs text-on-surface-variant space-y-1 list-disc pl-4">
+                                <li>Submit your response to view AI detected strengths.</li>
+                            </ul>
+                        </div>
+
+                        <div class="space-y-2 pt-2 border-t border-white/5">
+                            <div class="text-xs font-bold text-amber-400 font-label-technical flex items-center gap-1">
+                                <span class="material-symbols-outlined text-sm">warning</span> Areas to Improve
+                            </div>
+                            <ul id="interviewGapsList" class="text-xs text-on-surface-variant space-y-1 list-disc pl-4">
+                                <li>Submit your response to view areas to improve.</li>
+                            </ul>
+                        </div>
+
+                        <div class="pt-2 border-t border-white/5">
+                            <div class="text-xs font-bold text-on-surface font-label-technical mb-2 flex justify-between items-center">
+                                <span>Model Exemplary Response</span>
+                                <button onclick="copyToClipboard('interviewModelAnswer', this)" class="text-[10px] text-primary hover:text-on-surface flex items-center gap-1 border border-white/10 px-2 py-1 rounded">
+                                    <span class="material-symbols-outlined text-xs">content_copy</span> Copy
+                                </button>
+                            </div>
+                            <div id="interviewModelAnswer" class="p-3 bg-surface-container-low rounded-lg text-xs text-on-surface-variant leading-relaxed max-h-40 overflow-y-auto font-sans">
+                                Complete an interview question to unlock exemplary STAR response templates tailored to your background.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ==================== TAB 6: SKILL GAP HEATMAP ==================== -->
+        <section id="heatmap-tab" class="space-y-stack-md hidden">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-6 gap-4">
+                <div>
+                    <h2 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface flex items-center gap-3">
+                        <span class="material-symbols-outlined text-primary text-3xl">grid_view</span>
+                        Multi-Role Skill Gap Matrix & Match Radar
+                    </h2>
+                    <p class="font-body-md text-on-surface-variant mt-1">Cross-examine your active resume against up to 3 target job descriptions simultaneously to uncover shared strengths and universal skill gaps.</p>
+                </div>
+            </div>
+
+            <!-- Job Descriptions Input Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="glass-panel p-4 rounded-xl border border-white/5 space-y-2">
+                    <label class="text-xs font-bold text-on-surface font-label-technical block">Target Role 1 Job Description</label>
+                    <textarea id="heatmapJd1" rows="5" class="w-full bg-surface-container-high border border-white/10 rounded-lg p-3 text-xs text-on-surface outline-none focus:border-primary placeholder:text-on-surface-variant/40" placeholder="Paste Job Description 1 (e.g. Senior Full Stack Engineer)..."></textarea>
+                </div>
+
+                <div class="glass-panel p-4 rounded-xl border border-white/5 space-y-2">
+                    <label class="text-xs font-bold text-on-surface font-label-technical block">Target Role 2 Job Description</label>
+                    <textarea id="heatmapJd2" rows="5" class="w-full bg-surface-container-high border border-white/10 rounded-lg p-3 text-xs text-on-surface outline-none focus:border-primary placeholder:text-on-surface-variant/40" placeholder="Paste Job Description 2 (e.g. Backend Lead)..."></textarea>
+                </div>
+
+                <div class="glass-panel p-4 rounded-xl border border-white/5 space-y-2">
+                    <label class="text-xs font-bold text-on-surface font-label-technical block">Target Role 3 Job Description</label>
+                    <textarea id="heatmapJd3" rows="5" class="w-full bg-surface-container-high border border-white/10 rounded-lg p-3 text-xs text-on-surface outline-none focus:border-primary placeholder:text-on-surface-variant/40" placeholder="Paste Job Description 3 (e.g. AI Systems Architect)..."></textarea>
+                </div>
+            </div>
+
+            <button onclick="generateSkillHeatmap()" id="genHeatmapBtn" class="w-full bg-primary hover:bg-primary-fixed text-on-primary font-bold py-3 rounded-xl text-xs transition-colors flex items-center justify-center gap-2">
+                <span class="material-symbols-outlined text-base">analytics</span> Generate Multi-Role Skill Gap Matrix
+            </button>
+
+            <!-- Heatmap Results Section -->
+            <div id="heatmapResultsContainer" class="hidden space-y-6">
+                <!-- Comparative Roles Match Cards -->
+                <div id="heatmapRolesGrid" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <!-- Role Match Cards dynamically inserted here -->
+                </div>
+
+                <!-- Skill Matrix Table -->
+                <div class="glass-panel rounded-xl overflow-hidden border border-white/5 p-6 space-y-4">
+                    <h3 class="text-sm font-bold text-on-surface uppercase font-label-technical flex items-center gap-2">
+                        <span class="material-symbols-outlined text-primary text-base">matrix</span> Unified Candidate Skill Heatmap Matrix
+                    </h3>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs text-on-surface">
+                            <thead class="bg-surface-container-high text-on-surface-variant text-[10px] uppercase font-label-technical border-b border-white/10">
+                                <tr>
+                                    <th class="py-3 px-4">Skill / Technology</th>
+                                    <th class="py-3 px-4">Category</th>
+                                    <th class="py-3 px-4">Resume Status</th>
+                                    <th class="py-3 px-4">Required By Target Roles</th>
+                                </tr>
+                            </thead>
+                            <tbody id="heatmapMatrixTableBody" class="divide-y divide-white/5">
+                                <!-- Matrix rows dynamically inserted here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Universal Gaps & Strategic Action Plan -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="glass-panel p-6 rounded-xl border border-red-500/20 space-y-3">
+                        <h4 class="text-xs font-bold text-red-400 font-label-technical uppercase flex items-center gap-2">
+                            <span class="material-symbols-outlined text-base">cancel</span> Universal Missing Skill Gaps
+                        </h4>
+                        <ul id="universalGapsList" class="text-xs text-on-surface-variant space-y-1.5 list-disc pl-4">
+                            <!-- Universal missing skills -->
+                        </ul>
+                    </div>
+
+                    <div class="glass-panel p-6 rounded-xl border border-primary/30 space-y-3">
+                        <h4 class="text-xs font-bold text-primary font-label-technical uppercase flex items-center gap-2">
+                            <span class="material-symbols-outlined text-base">moving</span> Strategic Bridge Action Plan
+                        </h4>
+                        <ol id="heatmapActionPlanList" class="text-xs text-on-surface-variant space-y-1.5 list-decimal pl-4">
+                            <!-- Strategic action steps -->
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== TAB 7: SETTINGS ==================== -->
         <section id="settings-tab" class="space-y-stack-md hidden">
             <div>
                 <h1 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface">System Settings</h1>
@@ -1599,6 +1905,24 @@
         document.getElementById('authContainer').classList.add('hidden');
     }
 
+    function toggleProfileDropdown(e) {
+        if (e) e.stopPropagation();
+        const pDropdown = document.getElementById('userProfileDropdown');
+        if (pDropdown) {
+            pDropdown.classList.toggle('hidden');
+        }
+    }
+
+    document.addEventListener('click', function(e) {
+        const pDropdown = document.getElementById('userProfileDropdown');
+        if (pDropdown && !pDropdown.classList.contains('hidden')) {
+            const btn = e.target.closest('button[onclick*="toggleProfileDropdown"]');
+            if (!btn && !pDropdown.contains(e.target)) {
+                pDropdown.classList.add('hidden');
+            }
+        }
+    });
+
     async function checkAuth() {
         try {
             const res = await fetch('/me');
@@ -1623,6 +1947,9 @@
             
             // Set User Details
             document.getElementById('settingsUserEmail').textContent = data.email;
+            if (document.getElementById('dropdownUserEmail')) {
+                document.getElementById('dropdownUserEmail').textContent = data.email;
+            }
             
             // Populate resume if loaded
             if (data.resume_text && data.resume_filename) {
@@ -1632,6 +1959,9 @@
                 document.getElementById('resumeInfoSection').classList.remove('hidden');
                 document.getElementById('globalResumeName').textContent = data.resume_filename;
                 document.getElementById('resumeDot').className = 'w-2 h-2 rounded-full bg-primary glow-emerald';
+                if (document.getElementById('dropdownResumeBadge')) {
+                    document.getElementById('dropdownResumeBadge').textContent = data.resume_filename;
+                }
             }
             
             // Populate API keys in Settings form
@@ -1901,10 +2231,29 @@
         addNotification("Resume", "Cleared global resume profile.");
     }
 
+    function toggleMobileSidebar() {
+        const nav = document.querySelector('nav');
+        const backdrop = document.getElementById('sidebarBackdrop');
+        if (nav) {
+            nav.classList.toggle('-translate-x-full');
+            if (backdrop) backdrop.classList.toggle('hidden');
+        }
+    }
+
     // ── Tab Navigation controls ───────────────────────────────
     function switchTab(tabId) {
+        // Auto-close sidebar on mobile devices
+        if (window.innerWidth < 768) {
+            const nav = document.querySelector('nav');
+            const backdrop = document.getElementById('sidebarBackdrop');
+            if (nav && !nav.classList.contains('-translate-x-full')) {
+                nav.classList.add('-translate-x-full');
+                if (backdrop) backdrop.classList.add('hidden');
+            }
+        }
+
         // Toggle Sections
-        const tabs = ['ats-tab', 'chat-tab', 'intel-tab', 'campaigns-tab', 'settings-tab', 'support-tab'];
+        const tabs = ['ats-tab', 'chat-tab', 'interview-tab', 'heatmap-tab', 'intel-tab', 'campaigns-tab', 'settings-tab', 'support-tab'];
         tabs.forEach(t => {
             const el = document.getElementById(t);
             if (el) {
@@ -1917,14 +2266,13 @@
         });
 
         // Toggle nav button highlighting
-        const navBtns = ['ats-tab-btn', 'chat-tab-btn', 'intel-tab-btn', 'campaigns-tab-btn', 'settings-tab-btn', 'support-tab-btn'];
+        const navBtns = ['ats-tab-btn', 'chat-tab-btn', 'interview-tab-btn', 'heatmap-tab-btn', 'intel-tab-btn', 'campaigns-tab-btn', 'settings-tab-btn', 'support-tab-btn'];
         const activeBtnId = tabId.replace('-tab', '-tab-btn');
         navBtns.forEach(b => {
             const btn = document.getElementById(b);
             if (!btn) return;
             if (b === activeBtnId) {
                 btn.className = "w-full flex items-center gap-4 px-container-padding py-3 bg-primary-container/20 text-primary border-r-4 border-primary transition-all duration-200 ease-in-out text-left cursor-pointer outline-none";
-                // Ensure bold icons
                 const icon = btn.querySelector('.material-symbols-outlined');
                 if(icon) icon.style.fontVariationSettings = "'FILL' 1";
             } else {
@@ -1937,6 +2285,271 @@
                 if(icon) icon.style.fontVariationSettings = "'FILL' 0";
             }
         });
+    }
+
+    // ── AI Voice Mock Interview Logic ─────────────────────────────
+    let currentInterviewQuestion = "";
+    let speechRecognitionInstance = null;
+    let isRecordingSpeech = false;
+
+    async function generateVoiceQuestion() {
+        const role = document.getElementById('interviewRoleSelect').value;
+        const qType = document.getElementById('interviewTypeSelect').value;
+        const btn = document.getElementById('genVoiceQBtn');
+
+        btn.disabled = true;
+        btn.innerHTML = `<span class="w-4 h-4 border-2 border-on-primary border-t-transparent rounded-full animate-spin"></span> Generating...`;
+
+        const fd = new FormData();
+        fd.append('role', role);
+        fd.append('q_type', qType);
+
+        try {
+            const res = await fetch('/interview/generate-question', { method: 'POST', body: fd });
+            const data = await res.json();
+            
+            currentInterviewQuestion = data.question;
+            document.getElementById('interviewQuestionText').textContent = `"${data.question}"`;
+            document.getElementById('interviewCatBadge').textContent = `${data.category} • ${data.focus_area}`;
+            document.getElementById('interviewHintText').textContent = data.hint;
+            
+            // Speak question out loud automatically
+            speakQuestionText();
+        } catch(err) {
+            alert("Failed to generate question: " + err.message);
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = `<span class="material-symbols-outlined text-base">psychology</span> Generate Question`;
+        }
+    }
+
+    function speakQuestionText() {
+        if (!currentInterviewQuestion) return;
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(currentInterviewQuestion);
+            utterance.rate = 1.0;
+            utterance.pitch = 1.0;
+            window.speechSynthesis.speak(utterance);
+        } else {
+            console.log("Web Speech Synthesis not supported in this browser.");
+        }
+    }
+
+    function toggleSpeechRecording() {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            alert("Web Speech Recognition API is not supported in this browser. Please type your response directly into the transcript box!");
+            return;
+        }
+
+        const micBtn = document.getElementById('micToggleBtn');
+        const micDot = document.getElementById('micPulseDot');
+        const micStatus = document.getElementById('micStatusText');
+        const transcriptArea = document.getElementById('spokenAnswerTranscript');
+
+        if (isRecordingSpeech) {
+            if (speechRecognitionInstance) speechRecognitionInstance.stop();
+            isRecordingSpeech = false;
+            micBtn.innerHTML = `<span class="material-symbols-outlined text-sm">mic</span> Start Recording Spoken Answer`;
+            micBtn.className = "bg-secondary hover:bg-secondary-fixed text-background font-bold text-xs px-4 py-2 rounded-lg transition-colors flex items-center gap-2";
+            micDot.className = 'w-3 h-3 rounded-full bg-surface-variant';
+            micStatus.textContent = "Microphone Idle";
+            return;
+        }
+
+        speechRecognitionInstance = new SpeechRecognition();
+        speechRecognitionInstance.continuous = true;
+        speechRecognitionInstance.interimResults = true;
+
+        speechRecognitionInstance.onstart = function() {
+            isRecordingSpeech = true;
+            micBtn.innerHTML = `<span class="material-symbols-outlined text-sm animate-pulse">stop</span> Stop Recording`;
+            micBtn.className = "bg-red-500 hover:bg-red-600 text-white font-bold text-xs px-4 py-2 rounded-lg transition-colors flex items-center gap-2";
+            micDot.className = 'w-3 h-3 rounded-full bg-red-500 animate-ping';
+            micStatus.textContent = "Recording Live Voice Speech...";
+        };
+
+        speechRecognitionInstance.onresult = function(event) {
+            let transcript = '';
+            for (let i = event.resultIndex; i < event.results.length; i++) {
+                transcript += event.results[i][0].transcript;
+            }
+            transcriptArea.value = transcript;
+        };
+
+        speechRecognitionInstance.onerror = function(event) {
+            console.error("Speech Recognition Error:", event.error);
+            micStatus.textContent = "Mic Error: " + event.error;
+            isRecordingSpeech = false;
+            micBtn.innerHTML = `<span class="material-symbols-outlined text-sm">mic</span> Start Recording Spoken Answer`;
+        };
+
+        speechRecognitionInstance.onend = function() {
+            isRecordingSpeech = false;
+            micBtn.innerHTML = `<span class="material-symbols-outlined text-sm">mic</span> Start Recording Spoken Answer`;
+            micBtn.className = "bg-secondary hover:bg-secondary-fixed text-background font-bold text-xs px-4 py-2 rounded-lg transition-colors flex items-center gap-2";
+            micDot.className = 'w-3 h-3 rounded-full bg-surface-variant';
+            micStatus.textContent = "Microphone Ready";
+        };
+
+        speechRecognitionInstance.start();
+    }
+
+    async function submitVoiceAnswer() {
+        const role = document.getElementById('interviewRoleSelect').value;
+        const answerText = document.getElementById('spokenAnswerTranscript').value.trim();
+        const btn = document.getElementById('submitVoiceAnswerBtn');
+
+        if (!currentInterviewQuestion) {
+            alert("Please generate an interview question first!");
+            return;
+        }
+        if (!answerText) {
+            alert("Please record or type your spoken response before submitting!");
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = `<span class="w-4 h-4 border-2 border-on-primary border-t-transparent rounded-full animate-spin"></span> Evaluating STAR Response...`;
+
+        const fd = new FormData();
+        fd.append('role', role);
+        fd.append('question', currentInterviewQuestion);
+        fd.append('response_text', answerText);
+
+        try {
+            const res = await fetch('/interview/feedback', { method: 'POST', body: fd });
+            const data = await res.json();
+
+            document.getElementById('starScoreGauge').textContent = `${data.star_score}%`;
+            document.getElementById('confidenceRatingBadge').textContent = data.confidence_rating || 'Medium';
+            document.getElementById('toneAnalysisText').textContent = data.tone_analysis || 'Clear response';
+
+            // Render Strengths
+            const strUl = document.getElementById('interviewStrengthsList');
+            strUl.innerHTML = (data.strengths || []).map(s => `<li>${s}</li>`).join('');
+
+            // Render Gaps
+            const gapUl = document.getElementById('interviewGapsList');
+            gapUl.innerHTML = (data.improvements || []).map(g => `<li>${g}</li>`).join('');
+
+            // Render Model Answer
+            document.getElementById('interviewModelAnswer').textContent = data.model_answer || 'N/A';
+        } catch(err) {
+            alert("Evaluation failed: " + err.message);
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = `<span class="material-symbols-outlined text-sm">verified</span> Evaluate My Spoken Answer`;
+        }
+    }
+
+    // ── Multi-Role Skill Heatmap Logic ────────────────────────────
+    async function generateSkillHeatmap() {
+        const jd1 = document.getElementById('heatmapJd1').value.trim();
+        const jd2 = document.getElementById('heatmapJd2').value.trim();
+        const jd3 = document.getElementById('heatmapJd3').value.trim();
+        const btn = document.getElementById('genHeatmapBtn');
+
+        const jds = [jd1, jd2, jd3].filter(j => j.length > 0);
+        if (jds.length === 0) {
+            alert("Please paste at least 1 target Job Description to generate the skill heatmap matrix!");
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = `<span class="w-4 h-4 border-2 border-on-primary border-t-transparent rounded-full animate-spin"></span> Analyzing Multi-Role Skill Matrix...`;
+
+        const fd = new FormData();
+        fd.append('roles_json', JSON.stringify(jds));
+
+        try {
+            const res = await fetch('/heatmap/analyze', { method: 'POST', body: fd });
+            const data = await res.json();
+
+            // Render Roles Grid
+            const rolesGrid = document.getElementById('heatmapRolesGrid');
+            rolesGrid.innerHTML = (data.roles || []).map(r => `
+                <div class="glass-panel p-4 rounded-xl border border-white/5 space-y-2">
+                    <div class="text-[10px] text-on-surface-variant uppercase font-label-technical">Target Role Fit</div>
+                    <div class="text-sm font-bold text-on-surface truncate">${r.role_title}</div>
+                    <div class="flex items-center justify-between pt-1">
+                        <span class="text-xl font-extrabold text-primary font-mono">${r.match_score}%</span>
+                        <span class="text-[10px] px-2.5 py-1 rounded-full bg-primary/20 text-primary border border-primary/40 font-bold">${r.status}</span>
+                    </div>
+                </div>
+            `).join('');
+
+            // Render Matrix Table
+            const tbody = document.getElementById('heatmapMatrixTableBody');
+            tbody.innerHTML = (data.skills_matrix || []).map(m => `
+                <tr class="hover:bg-white/5 transition-colors">
+                    <td class="py-3 px-4 font-bold text-on-surface">${m.skill_name}</td>
+                    <td class="py-3 px-4 text-on-surface-variant">${m.category}</td>
+                    <td class="py-3 px-4">
+                        ${m.present_in_resume 
+                            ? `<span class="inline-flex items-center gap-1 text-primary text-xs font-bold"><span class="w-2 h-2 rounded-full bg-primary glow-emerald"></span> Matched</span>`
+                            : `<span class="inline-flex items-center gap-1 text-red-400 text-xs font-bold"><span class="w-2 h-2 rounded-full bg-red-500"></span> Missing</span>`}
+                    </td>
+                    <td class="py-3 px-4 text-on-surface-variant">${(m.required_by_roles || []).join(', ')}</td>
+                </tr>
+            `).join('');
+
+            // Render Universal Gaps
+            const gapsUl = document.getElementById('universalGapsList');
+            gapsUl.innerHTML = (data.universal_gaps || []).map(g => `<li>${g}</li>`).join('');
+
+            // Render Action Plan
+            const planOl = document.getElementById('heatmapActionPlanList');
+            planOl.innerHTML = (data.strategic_action_plan || []).map(p => `<li>${p}</li>`).join('');
+
+            document.getElementById('heatmapResultsContainer').classList.remove('hidden');
+        } catch(err) {
+            alert("Heatmap analysis failed: " + err.message);
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = `<span class="material-symbols-outlined text-base">analytics</span> Generate Multi-Role Skill Gap Matrix`;
+        }
+    }
+
+    async function rewriteResumeBullet() {
+        const bullet = document.getElementById('bulletRewriterInput').value.trim();
+        const tone = document.getElementById('bulletToneSelect').value;
+        const btn = document.getElementById('rewriteBulletBtn');
+
+        if (!bullet) {
+            alert("Please paste a bullet point to rewrite!");
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = `<span class="w-3 h-3 border-2 border-background border-t-transparent rounded-full animate-spin"></span>`;
+
+        const fd = new FormData();
+        fd.append('bullet', bullet);
+        fd.append('tone', tone);
+
+        try {
+            const res = await fetch('/bullet/rewrite', { method: 'POST', body: fd });
+            const data = await res.json();
+            
+            const container = document.getElementById('bulletRewriteResults');
+            container.innerHTML = (data.suggestions || []).map(s => `
+                <div class="p-2.5 bg-surface-container-low rounded border border-white/5 space-y-1 text-left">
+                    <div class="flex justify-between items-center text-[10px]">
+                        <span class="font-bold text-primary font-label-technical">${s.option}</span>
+                        <span class="text-emerald-400 font-mono font-bold">${s.impact_boost}</span>
+                    </div>
+                    <p class="text-xs text-on-surface font-sans leading-snug">${s.text}</p>
+                </div>
+            `).join('');
+            container.classList.remove('hidden');
+        } catch(err) {
+            alert("Rewrite failed: " + err.message);
+        } finally {
+            btn.disabled = false;
+            btn.textContent = "Rewrite";
+        }
     }
 
     // ── Tab 1: ATS Scorer ───────────────────────────────────────

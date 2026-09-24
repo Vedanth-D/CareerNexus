@@ -412,3 +412,56 @@ async def delete_all_user_apps(user_id: int = Depends(get_current_user_id)):
         return {"success": True}
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=500)
+
+# --- Novel AI Endpoints ---
+@app.post("/interview/generate-question")
+async def interview_gen(role: str = Form("Full Stack Developer"), q_type: str = Form("technical"), user_id: int = Depends(get_current_user_id)):
+    from agents.interview_agent import generate_interview_question
+    from core.database import get_user_by_id
+    user = get_user_by_id(user_id)
+    keys = json.loads(user.get("api_keys_json", "{}")) if user else {}
+    user_api_key = keys.get("groq_key") or os.getenv("GROQ_API_KEY")
+    resume = user.get("resume_text", "") if user else ""
+
+    res = await asyncio.to_thread(generate_interview_question, role, resume, q_type, api_key=user_api_key)
+    return JSONResponse(content=res)
+
+@app.post("/interview/feedback")
+async def interview_feedback(role: str = Form(...), question: str = Form(...), response_text: str = Form(...), user_id: int = Depends(get_current_user_id)):
+    from agents.interview_agent import evaluate_interview_response
+    from core.database import get_user_by_id
+    user = get_user_by_id(user_id)
+    keys = json.loads(user.get("api_keys_json", "{}")) if user else {}
+    user_api_key = keys.get("groq_key") or os.getenv("GROQ_API_KEY")
+    resume = user.get("resume_text", "") if user else ""
+
+    res = await asyncio.to_thread(evaluate_interview_response, role, question, response_text, resume, api_key=user_api_key)
+    return JSONResponse(content=res)
+
+@app.post("/heatmap/analyze")
+async def heatmap_analyze(roles_json: str = Form("[]"), user_id: int = Depends(get_current_user_id)):
+    from agents.heatmap_agent import generate_skill_heatmap
+    from core.database import get_user_by_id
+    user = get_user_by_id(user_id)
+    keys = json.loads(user.get("api_keys_json", "{}")) if user else {}
+    user_api_key = keys.get("groq_key") or os.getenv("GROQ_API_KEY")
+    resume = user.get("resume_text", "") if user else ""
+
+    try:
+        jds = json.loads(roles_json)
+    except Exception:
+        jds = []
+
+    res = await asyncio.to_thread(generate_skill_heatmap, resume, jds, api_key=user_api_key)
+    return JSONResponse(content=res)
+
+@app.post("/bullet/rewrite")
+async def bullet_rewrite(bullet: str = Form(...), role: str = Form(""), tone: str = Form("Executive"), user_id: int = Depends(get_current_user_id)):
+    from agents.bullet_agent import rewrite_bullet_point
+    from core.database import get_user_by_id
+    user = get_user_by_id(user_id)
+    keys = json.loads(user.get("api_keys_json", "{}")) if user else {}
+    user_api_key = keys.get("groq_key") or os.getenv("GROQ_API_KEY")
+
+    res = await asyncio.to_thread(rewrite_bullet_point, bullet, role, tone, api_key=user_api_key)
+    return JSONResponse(content=res)
