@@ -4,18 +4,21 @@ import os
 import io
 import re
 import secrets
-from fastapi import FastAPI, UploadFile, File, Form, Cookie, Depends, HTTPException, status, Response
+from datetime import datetime, timedelta, timezone
+from fastapi import FastAPI, UploadFile, File, Form, Cookie, Depends, HTTPException, status, Response, Request
 from fastapi.responses import HTMLResponse, StreamingResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
+
+from core.auth_security import (
+    create_session, get_session, destroy_session, cleanup_expired_sessions,
+    is_rate_limited, record_attempt, clear_rate_limit, generate_token
+)
 
 load_dotenv()
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
-
-# In-memory session store (session_id -> user_id)
-SESSIONS = {}
 
 @app.on_event("startup")
 def on_startup():
@@ -24,12 +27,13 @@ def on_startup():
 
 # --- Auth Dependency ---
 def get_current_user_id(session_id: str = Cookie(None)):
-    if not session_id or session_id not in SESSIONS:
+    session = get_session(session_id)
+    if not session:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Not authenticated"
+            detail="Session invalid or expired. Please sign in again."
         )
-    return SESSIONS[session_id]
+    return session["user_id"]
 
 # --- File Extraction Utilities ---
 def extract_text_from_pdf(file_bytes: bytes) -> str:
@@ -47,33 +51,136 @@ def extract_text_from_docx(file_bytes: bytes) -> str:
 
 # --- User Auth Router Endpoints ---
 @app.post("/register")
-async def register(email: str = Form(...), password: str = Form(...)):
+async def register(request: Request, email: str = Form(...), password: str = Form(...)):
+    client_ip = request.client.host if request.client else "127.0.0.1"
+    rate_key = f"register:{client_ip}"
+    
+    limited, retry_after = is_rate_limited(rate_key, max_requests=5, window_seconds=900)
+    if limited:
+        return JSONResponse(
+            content={"error": f"Too many registration attempts. Please retry in {retry_after} seconds."},
+            status_code=429
+        )
+    
+    if len(password) < 6:
+        return JSONResponse(content={"error": "Password must be at least 6 characters long."}, status_code=400)
+
     from core.database import create_user
     try:
-        user_id = create_user(email, password)
-        return {"success": True, "message": "Account created successfully!"}
+        v_token = generate_token("verify")
+        v_expires = (datetime.now(timezone.utc) + timedelta(hours=24)).isoformat()
+        user_id = create_user(email, password, is_verified=0, verification_token=v_token, verification_token_expires=v_expires)
+        return {
+            "success": True,
+            "message": "Account created successfully! Please verify your email.",
+            "verification_token": v_token
+        }
     except ValueError as e:
+        record_attempt(rate_key)
         return JSONResponse(content={"error": str(e)}, status_code=400)
     except Exception as e:
+        record_attempt(rate_key)
         return JSONResponse(content={"error": f"Registration failed: {str(e)}"}, status_code=500)
 
 @app.post("/login")
-async def login(response: Response, email: str = Form(...), password: str = Form(...)):
+async def login(request: Request, response: Response, email: str = Form(...), password: str = Form(...)):
+    clean_email = email.strip().lower()
+    client_ip = request.client.host if request.client else "127.0.0.1"
+    rate_key = f"login:{client_ip}:{clean_email}"
+    
+    limited, retry_after = is_rate_limited(rate_key, max_requests=5, window_seconds=900)
+    if limited:
+        return JSONResponse(
+            content={"error": f"Too many failed login attempts. Account temporarily locked. Retry in {retry_after} seconds."},
+            status_code=429
+        )
+
     from core.database import verify_user
-    user = verify_user(email, password)
+    user = verify_user(clean_email, password)
     if not user:
+        record_attempt(rate_key)
         return JSONResponse(content={"error": "Invalid email or password."}, status_code=400)
     
-    session_id = secrets.token_hex(16)
-    SESSIONS[session_id] = user["id"]
-    response.set_cookie(key="session_id", value=session_id, httponly=True, secure=False)
-    return {"success": True, "email": user["email"]}
+    clear_rate_limit(rate_key)
+    session_id = create_session(user["id"])
+    
+    response.set_cookie(
+        key="session_id",
+        value=session_id,
+        httponly=True,
+        max_age=86400,
+        samesite="lax",
+        secure=False
+    )
+    return {
+        "success": True,
+        "email": user["email"],
+        "is_verified": user.get("is_verified", 1)
+    }
+
+@app.post("/verify-email")
+async def verify_email(token: str = Form(...)):
+    from core.database import verify_email_token
+    success, message = verify_email_token(token)
+    if not success:
+        return JSONResponse(content={"error": message}, status_code=400)
+    return {"success": True, "message": message}
+
+@app.post("/forgot-password")
+async def forgot_password(request: Request, email: str = Form(...)):
+    clean_email = email.strip().lower()
+    client_ip = request.client.host if request.client else "127.0.0.1"
+    rate_key = f"forgot:{client_ip}"
+    
+    limited, retry_after = is_rate_limited(rate_key, max_requests=3, window_seconds=900)
+    if limited:
+        return JSONResponse(
+            content={"error": f"Too many password reset requests. Retry in {retry_after} seconds."},
+            status_code=429
+        )
+
+    record_attempt(rate_key)
+    from core.database import set_password_reset_token
+    r_token = generate_token("reset")
+    r_expires = (datetime.now(timezone.utc) + timedelta(minutes=15)).isoformat()
+    
+    found = set_password_reset_token(clean_email, r_token, r_expires)
+    
+    res = {
+        "success": True,
+        "message": "If an account exists with this email, password reset instructions have been generated."
+    }
+    if found:
+        res["reset_token"] = r_token
+    return res
+
+@app.post("/reset-password")
+async def reset_password(request: Request, token: str = Form(...), new_password: str = Form(...)):
+    client_ip = request.client.host if request.client else "127.0.0.1"
+    rate_key = f"reset:{client_ip}"
+    
+    limited, retry_after = is_rate_limited(rate_key, max_requests=5, window_seconds=900)
+    if limited:
+        return JSONResponse(
+            content={"error": f"Too many reset attempts. Retry in {retry_after} seconds."},
+            status_code=429
+        )
+
+    if len(new_password) < 6:
+        return JSONResponse(content={"error": "Password must be at least 6 characters long."}, status_code=400)
+
+    from core.database import verify_reset_token_and_update_password
+    success, message = verify_reset_token_and_update_password(token, new_password)
+    if not success:
+        record_attempt(rate_key)
+        return JSONResponse(content={"error": message}, status_code=400)
+    return {"success": True, "message": message}
 
 @app.post("/logout")
 async def logout(response: Response, session_id: str = Cookie(None)):
-    if session_id in SESSIONS:
-        del SESSIONS[session_id]
-    response.delete_cookie("session_id")
+    if session_id:
+        destroy_session(session_id)
+    response.delete_cookie(key="session_id", httponly=True, samesite="lax")
     return {"success": True}
 
 @app.get("/me")
@@ -84,15 +191,30 @@ async def get_me(user_id: int = Depends(get_current_user_id)):
         return JSONResponse(content={"error": "User profile not found"}, status_code=404)
     
     try:
-        keys = json.loads(user.get("api_keys_json", "{}"))
+        raw_keys = json.loads(user.get("api_keys_json", "{}"))
     except Exception:
-        keys = {}
+        raw_keys = {}
+
+    def mask_val(val: str) -> str:
+        if not val:
+            return ""
+        if len(val) <= 8:
+            return "********"
+        return val[:4] + "..." + val[-4:]
+
+    masked_keys = {k: mask_val(v) for k, v in raw_keys.items()}
 
     return {
         "email": user["email"],
         "resume_filename": user["resume_filename"],
         "resume_text": user["resume_text"],
-        "keys": keys
+        "is_verified": user.get("is_verified", 1),
+        "keys": masked_keys,
+        "has_keys": {
+            "groq": bool(raw_keys.get("groq_key")),
+            "notion": bool(raw_keys.get("notion_key")),
+            "adzuna": bool(raw_keys.get("adzuna_id"))
+        }
     }
 
 # --- Settings Endpoints ---
