@@ -521,7 +521,9 @@ async def get_user_apps(user_id: int = Depends(get_current_user_id)):
 async def delete_user_app(job_id: str, user_id: int = Depends(get_current_user_id)):
     from core.database import delete_application
     try:
-        delete_application(user_id, job_id)
+        deleted = delete_application(user_id, job_id)
+        if not deleted:
+            return JSONResponse(content={"error": "Application not found or unauthorized access."}, status_code=404)
         return {"success": True}
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=500)

@@ -69,7 +69,12 @@ def init_db():
         mongo_db.users.create_index("email", unique=True)
         mongo_db.users.create_index("verification_token")
         mongo_db.users.create_index("reset_token")
-        mongo_db.applications.create_index("job_id", unique=True)
+        # Drop legacy single-field job_id index if it exists
+        try:
+            mongo_db.applications.drop_index("job_id_1")
+        except Exception:
+            pass
+        mongo_db.applications.create_index([("user_id", 1), ("job_id", 1)], unique=True)
         return
 
     # Fallback to SQLite
@@ -108,7 +113,7 @@ def init_db():
         CREATE TABLE IF NOT EXISTS applications (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER NOT NULL,
-            job_id TEXT UNIQUE NOT NULL,
+            job_id TEXT NOT NULL,
             title TEXT NOT NULL,
             company TEXT NOT NULL,
             url TEXT DEFAULT '',
@@ -119,6 +124,7 @@ def init_db():
             recruiter_email_json TEXT DEFAULT '{}',
             linkedin_note TEXT DEFAULT '',
             tailored_resume TEXT DEFAULT '',
+            UNIQUE(user_id, job_id),
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         )
     """)
@@ -431,7 +437,7 @@ def add_application(user_id: int, job_id: str, title: str, company: str, url: st
             "linkedin_note": linkedin_note,
             "tailored_resume": tailored_resume
         }
-        mongo_db.applications.update_one({"job_id": job_id}, {"$set": app_doc}, upsert=True)
+        mongo_db.applications.update_one({"user_id": user_id, "job_id": job_id}, {"$set": app_doc}, upsert=True)
         return
 
     conn = get_db_connection()
@@ -441,7 +447,7 @@ def add_application(user_id: int, job_id: str, title: str, company: str, url: st
             """INSERT INTO applications 
                (user_id, job_id, title, company, url, fit_score, status, date_applied, cover_letter, recruiter_email_json, linkedin_note, tailored_resume)
                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-               ON CONFLICT(job_id) DO UPDATE SET
+               ON CONFLICT(user_id, job_id) DO UPDATE SET
                title=excluded.title, company=excluded.company, url=excluded.url, fit_score=excluded.fit_score,
                status=excluded.status, cover_letter=excluded.cover_letter, recruiter_email_json=excluded.recruiter_email_json,
                linkedin_note=excluded.linkedin_note, tailored_resume=excluded.tailored_resume""",
@@ -494,17 +500,19 @@ def get_applications(user_id: int) -> list:
         result.append(item)
     return result
 
-def delete_application(user_id: int, job_id: str):
+def delete_application(user_id: int, job_id: str) -> bool:
     mongo_db = get_mongo_db()
     if mongo_db is not None:
-        mongo_db.applications.delete_one({"user_id": user_id, "job_id": job_id})
-        return
+        res = mongo_db.applications.delete_one({"user_id": user_id, "job_id": job_id})
+        return res.deleted_count > 0
 
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("DELETE FROM applications WHERE user_id = ? AND job_id = ?", (user_id, job_id))
     conn.commit()
+    count = cursor.rowcount
     conn.close()
+    return count > 0
 
 def delete_all_applications(user_id: int):
     mongo_db = get_mongo_db()
