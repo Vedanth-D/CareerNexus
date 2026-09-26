@@ -17,7 +17,10 @@ def get_mongo_db():
         return None
     mongo_uri = os.getenv("MONGODB_URI", "mongodb://localhost:27017")
     try:
-        client = MongoClient(mongo_uri, serverSelectionTimeoutMS=1500)
+        kwargs = {"serverSelectionTimeoutMS": 1500}
+        if "tls=true" in mongo_uri.lower() or "ssl=true" in mongo_uri.lower() or os.getenv("ENV") == "production":
+            kwargs["tls"] = True
+        client = MongoClient(mongo_uri, **kwargs)
         client.admin.command('ping')
         return client["job_agent"]
     except Exception:
@@ -36,6 +39,11 @@ def get_db_connection():
     db_path = get_db_file_path()
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
+    try:
+        if os.name == 'posix' and os.path.exists(db_path):
+            os.chmod(db_path, 0o600)
+    except Exception:
+        pass
     return conn
 
 # ── PASSWORDS & HASHING ────────────────────────────────────────

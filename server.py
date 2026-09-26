@@ -15,10 +15,31 @@ from core.auth_security import (
     is_rate_limited, record_attempt, clear_rate_limit, generate_token
 )
 
+from core.security_logger import log_auth_event, log_security_event, log_api_error
+
 load_dotenv()
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# ── SECURITY HEADERS & AUDIT MIDDLEWARE ────────────────────────
+@app.middleware("http")
+async def security_middleware(request: Request, call_next):
+    response = await call_next(request)
+    
+    # Enforce OWASP Recommended Security Headers
+    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    
+    # Audit log 5xx API errors
+    if response.status_code >= 500:
+        client_ip = request.client.host if request.client else "127.0.0.1"
+        log_api_error(request.url.path, client_ip, response.status_code, "Internal Server Error")
+        
+    return response
 
 @app.on_event("startup")
 def on_startup():
@@ -57,6 +78,7 @@ async def register(request: Request, email: str = Form(...), password: str = For
     
     limited, retry_after = is_rate_limited(rate_key, max_requests=5, window_seconds=900)
     if limited:
+        log_security_event("SECURITY_RATE_LIMIT_EXCEEDED", client_ip, detail=f"Register rate limit for {rate_key}")
         return JSONResponse(
             content={"error": f"Too many registration attempts. Please retry in {retry_after} seconds."},
             status_code=429
@@ -70,6 +92,7 @@ async def register(request: Request, email: str = Form(...), password: str = For
         v_token = generate_token("verify")
         v_expires = (datetime.now(timezone.utc) + timedelta(hours=24)).isoformat()
         user_id = create_user(email, password, is_verified=0, verification_token=v_token, verification_token_expires=v_expires)
+        log_auth_event("AUTH_REGISTER", client_ip, email=email, success=True, detail="New user registered")
         return {
             "success": True,
             "message": "Account created successfully! Please verify your email.",
@@ -77,9 +100,11 @@ async def register(request: Request, email: str = Form(...), password: str = For
         }
     except ValueError as e:
         record_attempt(rate_key)
+        log_auth_event("AUTH_REGISTER", client_ip, email=email, success=False, detail=str(e))
         return JSONResponse(content={"error": str(e)}, status_code=400)
     except Exception as e:
         record_attempt(rate_key)
+        log_auth_event("AUTH_REGISTER", client_ip, email=email, success=False, detail=f"Error: {str(e)}")
         return JSONResponse(content={"error": f"Registration failed: {str(e)}"}, status_code=500)
 
 @app.post("/login")
@@ -90,6 +115,7 @@ async def login(request: Request, response: Response, email: str = Form(...), pa
     
     limited, retry_after = is_rate_limited(rate_key, max_requests=5, window_seconds=900)
     if limited:
+        log_security_event("SECURITY_RATE_LIMIT_EXCEEDED", client_ip, detail=f"Login rate limit locked for {clean_email}")
         return JSONResponse(
             content={"error": f"Too many failed login attempts. Account temporarily locked. Retry in {retry_after} seconds."},
             status_code=429
@@ -99,10 +125,13 @@ async def login(request: Request, response: Response, email: str = Form(...), pa
     user = verify_user(clean_email, password)
     if not user:
         record_attempt(rate_key)
+        log_auth_event("AUTH_LOGIN_FAILED", client_ip, email=clean_email, success=False, detail="Invalid credentials")
         return JSONResponse(content={"error": "Invalid email or password."}, status_code=400)
     
     clear_rate_limit(rate_key)
     session_id = create_session(user["id"])
+    
+    is_https = request.headers.get("x-forwarded-proto") == "https" or os.getenv("ENV") == "production" or os.getenv("SECURE_COOKIES") == "true"
     
     response.set_cookie(
         key="session_id",
@@ -110,8 +139,9 @@ async def login(request: Request, response: Response, email: str = Form(...), pa
         httponly=True,
         max_age=86400,
         samesite="lax",
-        secure=False
+        secure=bool(is_https)
     )
+    log_auth_event("AUTH_LOGIN_SUCCESS", client_ip, email=clean_email, success=True)
     return {
         "success": True,
         "email": user["email"],
