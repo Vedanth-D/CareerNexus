@@ -4,7 +4,9 @@ from unittest.mock import patch
 from fastapi.testclient import TestClient
 
 sys.path.insert(0, os.path.abspath("."))
-
+import agents.ats_agent
+import agents.writer
+import agents.chat_agent
 from server import app
 from core.auth_security import create_session, clear_rate_limit
 

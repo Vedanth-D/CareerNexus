@@ -16,6 +16,16 @@ from core.auth_security import (
 )
 
 from core.security_logger import log_auth_event, log_security_event, log_api_error
+from core.input_validation import (
+    sanitize_text,
+    validate_and_sanitize_email,
+    validate_password,
+    validate_token,
+    validate_job_id,
+    validate_search_query,
+    validate_uploaded_file,
+    validate_json_field
+)
 
 load_dotenv()
 
@@ -69,7 +79,13 @@ def on_startup():
 
 # --- Auth Dependency ---
 def get_current_user_id(session_id: str = Cookie(None)):
-    session = get_session(session_id)
+    if not session_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Session invalid or expired. Please sign in again."
+        )
+    clean_session_id = sanitize_text(session_id, max_length=128)
+    session = get_session(clean_session_id)
     if not session:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -105,15 +121,15 @@ async def register(request: Request, email: str = Form(...), password: str = For
             status_code=429
         )
     
-    if len(password) < 6:
-        return JSONResponse(content={"error": "Password must be at least 6 characters long."}, status_code=400)
+    clean_email = validate_and_sanitize_email(email)
+    clean_password = validate_password(password)
 
     from core.database import create_user
     try:
         v_token = generate_token("verify")
         v_expires = (datetime.now(timezone.utc) + timedelta(hours=24)).isoformat()
-        user_id = create_user(email, password, is_verified=0, verification_token=v_token, verification_token_expires=v_expires)
-        log_auth_event("AUTH_REGISTER", client_ip, email=email, success=True, detail="New user registered")
+        user_id = create_user(clean_email, clean_password, is_verified=0, verification_token=v_token, verification_token_expires=v_expires)
+        log_auth_event("AUTH_REGISTER", client_ip, email=clean_email, success=True, detail="New user registered")
         return {
             "success": True,
             "message": "Account created successfully! Please verify your email.",
@@ -121,16 +137,17 @@ async def register(request: Request, email: str = Form(...), password: str = For
         }
     except ValueError as e:
         record_attempt(rate_key)
-        log_auth_event("AUTH_REGISTER", client_ip, email=email, success=False, detail=str(e))
+        log_auth_event("AUTH_REGISTER", client_ip, email=clean_email, success=False, detail=str(e))
         return JSONResponse(content={"error": str(e)}, status_code=400)
     except Exception as e:
         record_attempt(rate_key)
-        log_auth_event("AUTH_REGISTER", client_ip, email=email, success=False, detail=f"Error: {str(e)}")
+        log_auth_event("AUTH_REGISTER", client_ip, email=clean_email, success=False, detail=f"Error: {str(e)}")
         return JSONResponse(content={"error": f"Registration failed: {str(e)}"}, status_code=500)
 
 @app.post("/login")
 async def login(request: Request, response: Response, email: str = Form(...), password: str = Form(...)):
-    clean_email = email.strip().lower()
+    clean_email = validate_and_sanitize_email(email)
+    clean_password = validate_password(password)
     client_ip = request.client.host if request.client else "127.0.0.1"
     rate_key = f"login:{client_ip}:{clean_email}"
     
@@ -143,7 +160,7 @@ async def login(request: Request, response: Response, email: str = Form(...), pa
         )
 
     from core.database import verify_user
-    user = verify_user(clean_email, password)
+    user = verify_user(clean_email, clean_password)
     if not user:
         record_attempt(rate_key)
         log_auth_event("AUTH_LOGIN_FAILED", client_ip, email=clean_email, success=False, detail="Invalid credentials")
@@ -171,15 +188,16 @@ async def login(request: Request, response: Response, email: str = Form(...), pa
 
 @app.post("/verify-email")
 async def verify_email(token: str = Form(...)):
+    clean_token = validate_token(token)
     from core.database import verify_email_token
-    success, message = verify_email_token(token)
+    success, message = verify_email_token(clean_token)
     if not success:
         return JSONResponse(content={"error": message}, status_code=400)
     return {"success": True, "message": message}
 
 @app.post("/forgot-password")
 async def forgot_password(request: Request, email: str = Form(...)):
-    clean_email = email.strip().lower()
+    clean_email = validate_and_sanitize_email(email)
     client_ip = request.client.host if request.client else "127.0.0.1"
     rate_key = f"forgot:{client_ip}"
     
@@ -217,11 +235,11 @@ async def reset_password(request: Request, token: str = Form(...), new_password:
             status_code=429
         )
 
-    if len(new_password) < 6:
-        return JSONResponse(content={"error": "Password must be at least 6 characters long."}, status_code=400)
+    clean_token = validate_token(token)
+    clean_password = validate_password(new_password)
 
     from core.database import verify_reset_token_and_update_password
-    success, message = verify_reset_token_and_update_password(token, new_password)
+    success, message = verify_reset_token_and_update_password(clean_token, clean_password)
     if not success:
         record_attempt(rate_key)
         return JSONResponse(content={"error": message}, status_code=400)
@@ -230,7 +248,8 @@ async def reset_password(request: Request, token: str = Form(...), new_password:
 @app.post("/logout")
 async def logout(response: Response, session_id: str = Cookie(None)):
     if session_id:
-        destroy_session(session_id)
+        clean_session_id = sanitize_text(session_id, max_length=128)
+        destroy_session(clean_session_id)
     response.delete_cookie(key="session_id", httponly=True, samesite="lax")
     return {"success": True}
 
@@ -271,9 +290,10 @@ async def get_me(user_id: int = Depends(get_current_user_id)):
 # --- Settings Endpoints ---
 @app.post("/settings/update-password")
 async def update_pwd(new_password: str = Form(...), user_id: int = Depends(get_current_user_id)):
+    clean_password = validate_password(new_password)
     from core.database import update_user_password
     try:
-        update_user_password(user_id, new_password)
+        update_user_password(user_id, clean_password)
         return {"success": True, "message": "Password updated successfully!"}
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=400)
@@ -289,11 +309,11 @@ async def update_keys(
 ):
     from core.database import update_user_api_keys
     keys = {
-        "groq_key": groq_key.strip(),
-        "notion_key": notion_key.strip(),
-        "notion_db": notion_db.strip(),
-        "adzuna_id": adzuna_id.strip(),
-        "adzuna_key": adzuna_key.strip()
+        "groq_key": sanitize_text(groq_key, max_length=256),
+        "notion_key": sanitize_text(notion_key, max_length=256),
+        "notion_db": sanitize_text(notion_db, max_length=256),
+        "adzuna_id": sanitize_text(adzuna_id, max_length=256),
+        "adzuna_key": sanitize_text(adzuna_key, max_length=256)
     }
     try:
         update_user_api_keys(user_id, keys)
@@ -306,23 +326,27 @@ async def update_keys(
 async def upload_resume(file: UploadFile = File(...), user_id: int = Depends(get_current_user_id)):
     from core.database import update_user_resume
     contents = await file.read()
-    filename = file.filename.lower()
+    
+    # 1. Enforce unsafe file upload security controls (magic bytes, extension whitelist, path traversal, max size)
+    safe_filename, ext = validate_uploaded_file(file, contents)
+
     try:
-        if filename.endswith(".pdf"):
+        if ext == ".pdf":
             text = extract_text_from_pdf(contents)
-        elif filename.endswith(".docx"):
+        elif ext == ".docx":
             text = extract_text_from_docx(contents)
-        elif filename.endswith(".txt") or filename.endswith(".md"):
+        elif ext in (".txt", ".md"):
             text = contents.decode("utf-8")
         else:
-            return JSONResponse(content={"error": "Upload PDF, DOCX or TXT only."}, status_code=400)
+            return JSONResponse(content={"error": "Upload PDF, DOCX, TXT or MD only."}, status_code=400)
             
-        if not text or len(text) < 30:
+        clean_text = sanitize_text(text, max_length=50000)
+        if not clean_text or len(clean_text) < 30:
             return JSONResponse(content={"error": "Could not read text. Try a different file."}, status_code=400)
             
-        # Update user profile in SQLite
-        update_user_resume(user_id, text, file.filename)
-        return {"text": text, "filename": file.filename}
+        # Update user profile in database
+        update_user_resume(user_id, clean_text, safe_filename)
+        return {"text": clean_text, "filename": safe_filename}
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=500)
 
@@ -336,6 +360,10 @@ async def home():
 @app.post("/run-agent")
 async def run_agent(request: Request, query: str = Form(...), resume: str = Form(...), user_id: int = Depends(get_current_user_id)):
     enforce_rate_limit(request, f"ai_run:{user_id}", max_requests=10, window_seconds=600, check_bot=True)
+    
+    clean_query = validate_search_query(query, max_length=200)
+    clean_resume = sanitize_text(resume, max_length=50000)
+    
     from core.database import get_user_by_id, add_application
     user = get_user_by_id(user_id)
     
@@ -347,7 +375,7 @@ async def run_agent(request: Request, query: str = Form(...), resume: str = Form
     
     user_api_key = keys.get("groq_key")
     if not user_api_key:
-        user_api_key = os.getenv("GROQ_API_KEY") # Fallback to server's default
+        user_api_key = os.getenv("GROQ_API_KEY")
 
     async def generate():
         from agents.scraper import scraper_agent
@@ -357,8 +385,8 @@ async def run_agent(request: Request, query: str = Form(...), resume: str = Form
         from core.state import AgentState
 
         state: AgentState = {
-            "job_search_query": query,
-            "resume_profile":   resume,
+            "job_search_query": clean_query,
+            "resume_profile":   clean_resume,
             "preferences":      {"remote": True},
             "listings":         [],
             "current_job":      None,
@@ -377,7 +405,7 @@ async def run_agent(request: Request, query: str = Form(...), resume: str = Form
         state = await asyncio.to_thread(scraper_agent, state)
         yield send("scraper_done", {
             "count": len(state["listings"]),
-            "jobs":  [{"title": j["title"], "company": j["company"]}
+            "jobs":  [{"title": sanitize_text(j["title"]), "company": sanitize_text(j["company"])}
                       for j in state["listings"]]
         })
 
@@ -390,12 +418,12 @@ async def run_agent(request: Request, query: str = Form(...), resume: str = Form
         state = await asyncio.to_thread(planner_agent, state, api_key=user_api_key)
         yield send("planner_done", {
             "jobs": [{
-                "title":   j["title"],
-                "company": j["company"],
+                "title":   sanitize_text(j["title"]),
+                "company": sanitize_text(j["company"]),
                 "url":     j["url"],
-                "source":  j.get("source", ""),
+                "source":  sanitize_text(j.get("source", "")),
                 "score":   j.get("fit_score", 0),
-                "reason":  j.get("fit_reason", "")
+                "reason":  sanitize_text(j.get("fit_reason", ""))
             } for j in state["listings"]]
         })
 
@@ -405,7 +433,7 @@ async def run_agent(request: Request, query: str = Form(...), resume: str = Form
         approved = [j for j in state["listings"] if j.get("approved")]
         yield send("critic_done", {
             "approved_count": len(approved),
-            "current_job": state["current_job"]["title"] if state["current_job"] else None
+            "current_job": sanitize_text(state["current_job"]["title"]) if state["current_job"] else None
         })
 
         if state.get("current_job"):
@@ -414,16 +442,16 @@ async def run_agent(request: Request, query: str = Form(...), resume: str = Form
             await asyncio.sleep(0.1)
             state = await asyncio.to_thread(writer_agent, state, api_key=user_api_key)
             yield send("writer_done", {
-                "job_title":       state["current_job"]["title"],
-                "company":         state["current_job"]["company"],
+                "job_title":       sanitize_text(state["current_job"]["title"]),
+                "company":         sanitize_text(state["current_job"]["company"]),
                 "job_url":         state["current_job"].get("url", "#"),
-                "cover_letter":    state.get("cover_letter", ""),
-                "tailored_resume": state.get("tailored_resume", ""),
+                "cover_letter":    sanitize_text(state.get("cover_letter", "")),
+                "tailored_resume": sanitize_text(state.get("tailored_resume", "")),
                 "recruiter_email": state.get("recruiter_email", {}),
-                "linkedin_note":    state.get("linkedin_note", "")
+                "linkedin_note":    sanitize_text(state.get("linkedin_note", ""))
             })
 
-            # Save the campaign directly to SQLite under user_id
+            # Save campaign to database under user_id
             yield send("stage", {"stage": "tracker", "message": "Logging campaign to database..."})
             await asyncio.sleep(0.1)
             
@@ -433,15 +461,15 @@ async def run_agent(request: Request, query: str = Form(...), resume: str = Form
                     add_application,
                     user_id=user_id,
                     job_id=job["id"],
-                    title=job["title"],
-                    company=job["company"],
+                    title=sanitize_text(job["title"]),
+                    company=sanitize_text(job["company"]),
                     url=job["url"],
                     fit_score=job.get("fit_score", 0),
                     status="Sent",
-                    cover_letter=state.get("cover_letter", ""),
+                    cover_letter=sanitize_text(state.get("cover_letter", "")),
                     recruiter_email=state.get("recruiter_email", {}),
-                    linkedin_note=state.get("linkedin_note", ""),
-                    tailored_resume=state.get("tailored_resume", "")
+                    linkedin_note=sanitize_text(state.get("linkedin_note", "")),
+                    tailored_resume=sanitize_text(state.get("tailored_resume", ""))
                 )
                 
                 # Check for Notion Sync in user keys
@@ -463,7 +491,6 @@ async def run_agent(request: Request, query: str = Form(...), resume: str = Form
                                 "Date Applied": {"date": {"start": datetime.now().date().isoformat()}},
                             }
                         )
-                        print("Synced campaign to user Notion Database")
                     except Exception as e:
                         print(f"Notion sync failed: {e}")
             except Exception as e:
@@ -485,6 +512,10 @@ async def run_agent(request: Request, query: str = Form(...), resume: str = Form
 @app.post("/analyze-ats")
 async def analyze_ats(request: Request, resume: str = Form(...), jd: str = Form(...), user_id: int = Depends(get_current_user_id)):
     enforce_rate_limit(request, f"ai_ats:{user_id}", max_requests=10, window_seconds=600, check_bot=True)
+    
+    clean_resume = sanitize_text(resume, max_length=50000)
+    clean_jd = sanitize_text(jd, max_length=50000)
+    
     from agents.ats_agent import ats_agent
     from agents.writer import writer_agent
     from core.database import get_user_by_id
@@ -497,24 +528,22 @@ async def analyze_ats(request: Request, resume: str = Form(...), jd: str = Form(
         
     user_api_key = keys.get("groq_key") or os.getenv("GROQ_API_KEY")
 
-    print("Endpoint: Running ATS Scorer...")
-    report = ats_agent(resume, jd, api_key=user_api_key)
+    report = ats_agent(clean_resume, clean_jd, api_key=user_api_key)
 
     # Get Tailored Resume
     mock_state = {
-        "resume_profile": resume,
+        "resume_profile": clean_resume,
         "current_job": {
             "title": "Target Role",
             "company": "Target Company",
-            "description": jd
+            "description": clean_jd
         }
     }
     try:
         res_state = await asyncio.to_thread(writer_agent, mock_state, api_key=user_api_key)
-        report["tailored_resume"] = res_state.get("tailored_resume", resume)
+        report["tailored_resume"] = res_state.get("tailored_resume", clean_resume)
     except Exception as e:
-        print(f"Tailored Resume generation failed: {e}")
-        report["tailored_resume"] = resume
+        report["tailored_resume"] = clean_resume
 
     return JSONResponse(content=report)
 
@@ -522,6 +551,10 @@ async def analyze_ats(request: Request, resume: str = Form(...), jd: str = Form(
 @app.post("/company-research")
 async def company_research(request: Request, company_name: str = Form(...), resume: str = Form(""), user_id: int = Depends(get_current_user_id)):
     enforce_rate_limit(request, f"ai_intel:{user_id}", max_requests=10, window_seconds=600, check_bot=True)
+    
+    clean_company = sanitize_text(company_name, max_length=100)
+    clean_resume = sanitize_text(resume, max_length=50000)
+    
     from agents.company_agent import company_agent
     from core.database import get_user_by_id
     
@@ -533,18 +566,22 @@ async def company_research(request: Request, company_name: str = Form(...), resu
         
     user_api_key = keys.get("groq_key") or os.getenv("GROQ_API_KEY")
 
-    print(f"Endpoint: Running Company Intelligence for {company_name}...")
     try:
-        report = await asyncio.to_thread(company_agent, company_name, resume, api_key=user_api_key)
+        report = await asyncio.to_thread(company_agent, clean_company, clean_resume, api_key=user_api_key)
         return JSONResponse(content=report)
     except Exception as e:
-        print(f"Company research failed: {e}")
         return JSONResponse(content={"error": str(e)}, status_code=500)
 
 # --- AI Chat endpoint ---
 @app.post("/chat")
 async def chat(request: Request, message: str = Form(...), history: str = Form("[]"), resume: str = Form(""), jd: str = Form(""), user_id: int = Depends(get_current_user_id)):
     enforce_rate_limit(request, f"ai_chat:{user_id}", max_requests=20, window_seconds=300)
+    
+    clean_message = sanitize_text(message, max_length=2000)
+    parsed_history = validate_json_field(history, max_length=50000)
+    clean_resume = sanitize_text(resume, max_length=50000)
+    clean_jd = sanitize_text(jd, max_length=50000)
+    
     from agents.chat_agent import chat_agent
     from core.database import get_user_by_id
     
@@ -556,15 +593,17 @@ async def chat(request: Request, message: str = Form(...), history: str = Form("
         
     user_api_key = keys.get("groq_key") or os.getenv("GROQ_API_KEY")
 
-    print("Endpoint: Chat Assistant invoked...")
-    try:
-        history_list = json.loads(history)
-    except Exception:
+    if isinstance(parsed_history, list):
+        history_list = [
+            {"role": sanitize_text(item.get("role", "")), "content": sanitize_text(item.get("content", ""))}
+            for item in parsed_history if isinstance(item, dict)
+        ]
+    else:
         history_list = []
 
-    history_list.append({"role": "user", "content": message})
-    reply = await asyncio.to_thread(chat_agent, history_list, resume, jd, api_key=user_api_key)
-    return JSONResponse(content={"reply": reply})
+    history_list.append({"role": "user", "content": clean_message})
+    reply = await asyncio.to_thread(chat_agent, history_list, clean_resume, clean_jd, api_key=user_api_key)
+    return JSONResponse(content={"reply": sanitize_text(reply)})
 
 # --- Database application retrieval endpoints ---
 @app.get("/applications")
@@ -575,9 +614,10 @@ async def get_user_apps(request: Request, user_id: int = Depends(get_current_use
 
 @app.delete("/applications/{job_id}")
 async def delete_user_app(job_id: str, user_id: int = Depends(get_current_user_id)):
+    clean_job_id = validate_job_id(job_id)
     from core.database import delete_application
     try:
-        deleted = delete_application(user_id, job_id)
+        deleted = delete_application(user_id, clean_job_id)
         if not deleted:
             return JSONResponse(content={"error": "Application not found or unauthorized access."}, status_code=404)
         return {"success": True}
@@ -597,6 +637,10 @@ async def delete_all_user_apps(user_id: int = Depends(get_current_user_id)):
 @app.post("/interview/generate-question")
 async def interview_gen(request: Request, role: str = Form("Full Stack Developer"), q_type: str = Form("technical"), user_id: int = Depends(get_current_user_id)):
     enforce_rate_limit(request, f"ai_interview:{user_id}", max_requests=20, window_seconds=300)
+    
+    clean_role = sanitize_text(role, max_length=100)
+    clean_type = sanitize_text(q_type, max_length=50)
+    
     from agents.interview_agent import generate_interview_question
     from core.database import get_user_by_id
     user = get_user_by_id(user_id)
@@ -604,12 +648,17 @@ async def interview_gen(request: Request, role: str = Form("Full Stack Developer
     user_api_key = keys.get("groq_key") or os.getenv("GROQ_API_KEY")
     resume = user.get("resume_text", "") if user else ""
 
-    res = await asyncio.to_thread(generate_interview_question, role, resume, q_type, api_key=user_api_key)
+    res = await asyncio.to_thread(generate_interview_question, clean_role, resume, clean_type, api_key=user_api_key)
     return JSONResponse(content=res)
 
 @app.post("/interview/feedback")
 async def interview_feedback(request: Request, role: str = Form(...), question: str = Form(...), response_text: str = Form(...), user_id: int = Depends(get_current_user_id)):
     enforce_rate_limit(request, f"ai_interview_fb:{user_id}", max_requests=20, window_seconds=300)
+    
+    clean_role = sanitize_text(role, max_length=100)
+    clean_question = sanitize_text(question, max_length=1000)
+    clean_response = sanitize_text(response_text, max_length=5000)
+    
     from agents.interview_agent import evaluate_interview_response
     from core.database import get_user_by_id
     user = get_user_by_id(user_id)
@@ -617,12 +666,19 @@ async def interview_feedback(request: Request, role: str = Form(...), question: 
     user_api_key = keys.get("groq_key") or os.getenv("GROQ_API_KEY")
     resume = user.get("resume_text", "") if user else ""
 
-    res = await asyncio.to_thread(evaluate_interview_response, role, question, response_text, resume, api_key=user_api_key)
+    res = await asyncio.to_thread(evaluate_interview_response, clean_role, clean_question, clean_response, resume, api_key=user_api_key)
     return JSONResponse(content=res)
 
 @app.post("/heatmap/analyze")
 async def heatmap_analyze(request: Request, roles_json: str = Form("[]"), user_id: int = Depends(get_current_user_id)):
     enforce_rate_limit(request, f"ai_heatmap:{user_id}", max_requests=10, window_seconds=600, check_bot=True)
+    
+    parsed_roles = validate_json_field(roles_json, max_length=50000)
+    if isinstance(parsed_roles, list):
+        jds = [sanitize_text(str(item), max_length=10000) for item in parsed_roles]
+    else:
+        jds = []
+
     from agents.heatmap_agent import generate_skill_heatmap
     from core.database import get_user_by_id
     user = get_user_by_id(user_id)
@@ -630,22 +686,22 @@ async def heatmap_analyze(request: Request, roles_json: str = Form("[]"), user_i
     user_api_key = keys.get("groq_key") or os.getenv("GROQ_API_KEY")
     resume = user.get("resume_text", "") if user else ""
 
-    try:
-        jds = json.loads(roles_json)
-    except Exception:
-        jds = []
-
     res = await asyncio.to_thread(generate_skill_heatmap, resume, jds, api_key=user_api_key)
     return JSONResponse(content=res)
 
 @app.post("/bullet/rewrite")
 async def bullet_rewrite(request: Request, bullet: str = Form(...), role: str = Form(""), tone: str = Form("Executive"), user_id: int = Depends(get_current_user_id)):
     enforce_rate_limit(request, f"ai_bullet:{user_id}", max_requests=20, window_seconds=300)
+    
+    clean_bullet = sanitize_text(bullet, max_length=1000)
+    clean_role = sanitize_text(role, max_length=100)
+    clean_tone = sanitize_text(tone, max_length=50)
+    
     from agents.bullet_agent import rewrite_bullet_point
     from core.database import get_user_by_id
     user = get_user_by_id(user_id)
     keys = json.loads(user.get("api_keys_json", "{}")) if user else {}
     user_api_key = keys.get("groq_key") or os.getenv("GROQ_API_KEY")
 
-    res = await asyncio.to_thread(rewrite_bullet_point, bullet, role, tone, api_key=user_api_key)
-    return JSONResponse(content=res)
+    res = await asyncio.to_thread(rewrite_bullet_point, clean_bullet, clean_role, clean_tone, api_key=user_api_key)
+    return JSONResponse(content=res)
