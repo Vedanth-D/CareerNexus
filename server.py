@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 
 from core.auth_security import (
     create_session, get_session, destroy_session, cleanup_expired_sessions,
-    is_rate_limited, record_attempt, clear_rate_limit, generate_token
+    is_rate_limited, record_attempt, clear_rate_limit, generate_token, is_suspicious_bot
 )
 
 from core.security_logger import log_auth_event, log_security_event, log_api_error
@@ -21,6 +21,27 @@ load_dotenv()
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
+
+def enforce_rate_limit(request: Request, rate_key: str, max_requests: int, window_seconds: int, check_bot: bool = False):
+    """Enforces rate limiting and optionally blocks suspicious bot user-agents."""
+    client_ip = request.client.host if request.client else "127.0.0.1"
+    ua = request.headers.get("user-agent", "")
+    
+    if check_bot and is_suspicious_bot(ua):
+        log_security_event("SECURITY_BOT_BLOCKED", client_ip, detail=f"Blocked bot user-agent: {ua[:50]}")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Automated scripts and scrapers are restricted from this endpoint."
+        )
+        
+    limited, retry_after = is_rate_limited(rate_key, max_requests=max_requests, window_seconds=window_seconds)
+    if limited:
+        log_security_event("SECURITY_RATE_LIMIT_EXCEEDED", client_ip, detail=f"Rate limit triggered for {rate_key}")
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=f"Rate limit exceeded. Please retry in {retry_after} seconds."
+        )
+    record_attempt(rate_key)
 
 # ── SECURITY HEADERS & AUDIT MIDDLEWARE ────────────────────────
 @app.middleware("http")
@@ -313,7 +334,8 @@ async def home():
 
 # --- Campaigns Execution endpoint ---
 @app.post("/run-agent")
-async def run_agent(query: str = Form(...), resume: str = Form(...), user_id: int = Depends(get_current_user_id)):
+async def run_agent(request: Request, query: str = Form(...), resume: str = Form(...), user_id: int = Depends(get_current_user_id)):
+    enforce_rate_limit(request, f"ai_run:{user_id}", max_requests=10, window_seconds=600, check_bot=True)
     from core.database import get_user_by_id, add_application
     user = get_user_by_id(user_id)
     
@@ -461,7 +483,8 @@ async def run_agent(query: str = Form(...), resume: str = Form(...), user_id: in
 
 # --- ATS Scorer endpoint ---
 @app.post("/analyze-ats")
-async def analyze_ats(resume: str = Form(...), jd: str = Form(...), user_id: int = Depends(get_current_user_id)):
+async def analyze_ats(request: Request, resume: str = Form(...), jd: str = Form(...), user_id: int = Depends(get_current_user_id)):
+    enforce_rate_limit(request, f"ai_ats:{user_id}", max_requests=10, window_seconds=600, check_bot=True)
     from agents.ats_agent import ats_agent
     from agents.writer import writer_agent
     from core.database import get_user_by_id
@@ -497,7 +520,8 @@ async def analyze_ats(resume: str = Form(...), jd: str = Form(...), user_id: int
 
 # --- Company Intelligence Research endpoint ---
 @app.post("/company-research")
-async def company_research(company_name: str = Form(...), resume: str = Form(""), user_id: int = Depends(get_current_user_id)):
+async def company_research(request: Request, company_name: str = Form(...), resume: str = Form(""), user_id: int = Depends(get_current_user_id)):
+    enforce_rate_limit(request, f"ai_intel:{user_id}", max_requests=10, window_seconds=600, check_bot=True)
     from agents.company_agent import company_agent
     from core.database import get_user_by_id
     
@@ -519,7 +543,8 @@ async def company_research(company_name: str = Form(...), resume: str = Form("")
 
 # --- AI Chat endpoint ---
 @app.post("/chat")
-async def chat(message: str = Form(...), history: str = Form("[]"), resume: str = Form(""), jd: str = Form(""), user_id: int = Depends(get_current_user_id)):
+async def chat(request: Request, message: str = Form(...), history: str = Form("[]"), resume: str = Form(""), jd: str = Form(""), user_id: int = Depends(get_current_user_id)):
+    enforce_rate_limit(request, f"ai_chat:{user_id}", max_requests=20, window_seconds=300)
     from agents.chat_agent import chat_agent
     from core.database import get_user_by_id
     
@@ -543,7 +568,8 @@ async def chat(message: str = Form(...), history: str = Form("[]"), resume: str 
 
 # --- Database application retrieval endpoints ---
 @app.get("/applications")
-async def get_user_apps(user_id: int = Depends(get_current_user_id)):
+async def get_user_apps(request: Request, user_id: int = Depends(get_current_user_id)):
+    enforce_rate_limit(request, f"api_apps:{user_id}", max_requests=60, window_seconds=60, check_bot=True)
     from core.database import get_applications
     return get_applications(user_id)
 
@@ -569,7 +595,8 @@ async def delete_all_user_apps(user_id: int = Depends(get_current_user_id)):
 
 # --- Novel AI Endpoints ---
 @app.post("/interview/generate-question")
-async def interview_gen(role: str = Form("Full Stack Developer"), q_type: str = Form("technical"), user_id: int = Depends(get_current_user_id)):
+async def interview_gen(request: Request, role: str = Form("Full Stack Developer"), q_type: str = Form("technical"), user_id: int = Depends(get_current_user_id)):
+    enforce_rate_limit(request, f"ai_interview:{user_id}", max_requests=20, window_seconds=300)
     from agents.interview_agent import generate_interview_question
     from core.database import get_user_by_id
     user = get_user_by_id(user_id)
@@ -581,7 +608,8 @@ async def interview_gen(role: str = Form("Full Stack Developer"), q_type: str = 
     return JSONResponse(content=res)
 
 @app.post("/interview/feedback")
-async def interview_feedback(role: str = Form(...), question: str = Form(...), response_text: str = Form(...), user_id: int = Depends(get_current_user_id)):
+async def interview_feedback(request: Request, role: str = Form(...), question: str = Form(...), response_text: str = Form(...), user_id: int = Depends(get_current_user_id)):
+    enforce_rate_limit(request, f"ai_interview_fb:{user_id}", max_requests=20, window_seconds=300)
     from agents.interview_agent import evaluate_interview_response
     from core.database import get_user_by_id
     user = get_user_by_id(user_id)
@@ -593,7 +621,8 @@ async def interview_feedback(role: str = Form(...), question: str = Form(...), r
     return JSONResponse(content=res)
 
 @app.post("/heatmap/analyze")
-async def heatmap_analyze(roles_json: str = Form("[]"), user_id: int = Depends(get_current_user_id)):
+async def heatmap_analyze(request: Request, roles_json: str = Form("[]"), user_id: int = Depends(get_current_user_id)):
+    enforce_rate_limit(request, f"ai_heatmap:{user_id}", max_requests=10, window_seconds=600, check_bot=True)
     from agents.heatmap_agent import generate_skill_heatmap
     from core.database import get_user_by_id
     user = get_user_by_id(user_id)
@@ -610,7 +639,8 @@ async def heatmap_analyze(roles_json: str = Form("[]"), user_id: int = Depends(g
     return JSONResponse(content=res)
 
 @app.post("/bullet/rewrite")
-async def bullet_rewrite(bullet: str = Form(...), role: str = Form(""), tone: str = Form("Executive"), user_id: int = Depends(get_current_user_id)):
+async def bullet_rewrite(request: Request, bullet: str = Form(...), role: str = Form(""), tone: str = Form("Executive"), user_id: int = Depends(get_current_user_id)):
+    enforce_rate_limit(request, f"ai_bullet:{user_id}", max_requests=20, window_seconds=300)
     from agents.bullet_agent import rewrite_bullet_point
     from core.database import get_user_by_id
     user = get_user_by_id(user_id)

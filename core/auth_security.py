@@ -88,7 +88,20 @@ def clear_rate_limit(key: str):
         del _RATE_LIMIT_STORE[key]
 
 
-# ── 3. CRYPTOGRAPHIC TOKEN GENERATOR ──────────────────────────
+# ── 3. CRYPTOGRAPHIC TOKEN & BOT PROTECTION ───────────────────
+SUSPICIOUS_BOT_USER_AGENTS = [
+    "curl", "python-requests", "python-urllib", "httpx", "aiohttp",
+    "guzzle", "scrapy", "wget", "go-http-client", "headlesschrome",
+    "phantomjs", "selenium"
+]
+
+def is_suspicious_bot(user_agent: str) -> bool:
+    """Detects raw script user-agents or headless automated scraper tools."""
+    if not user_agent or len(user_agent.strip()) < 5:
+        return True
+    ua_lower = user_agent.lower()
+    return any(bot in ua_lower for bot in SUSPICIOUS_BOT_USER_AGENTS)
+
 def generate_token(prefix: str = "") -> str:
     """Generates a secure random 64-char hex token for email verification or password reset."""
     raw_token = secrets.token_hex(32)
